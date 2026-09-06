@@ -4,11 +4,11 @@
 *   **Descripción:** Obtiene una lista paginada de todos los registros de etapas asociados a los envíos del sistema.
 *   **Parámetros de consulta:**
   * `page` (entero, opcional): Número de página a consultar (por defecto `1`).
-  * `limit` (entero, opcional): Cantidad de registros por página (por defecto `20`).
+  * `limit` (entero, opcional): Cantidad de registros por página (por defecto `5`).
 
 #### Ejemplo de Petición Completa
 ```http
-GET /api/v1/registro-etapas-delivery?page=1&limit=20
+GET /api/v1/registro-etapas-delivery?page=1&limit=5
 ```
 #### Respuestas
 *   **Código:** `200 OK` (Éxito con resultados)
@@ -21,8 +21,6 @@ GET /api/v1/registro-etapas-delivery?page=1&limit=20
       "envioId": 15,
       "etapaAlcanzada": "REPARTIDOR_ASIGNADO",
       "fechaHora": "2026-07-14T09:15:00",
-      "latitud": -34.603722,
-      "longitud": -58.381592,
       "fueValido": true
     },
     {
@@ -30,8 +28,6 @@ GET /api/v1/registro-etapas-delivery?page=1&limit=20
       "envioId": 15,
       "etapaAlcanzada": "EN_CAMINO",
       "fechaHora": "2026-07-14T09:35:00",
-      "latitud": -34.605122,
-      "longitud": -58.379431,
       "fueValido": true
     }
   ],
@@ -82,8 +78,6 @@ GET /api/v1/registro-etapas-delivery/1
   "envioId": 15,
   "etapaAlcanzada": "REPARTIDOR_ASIGNADO",
   "fechaHora": "2026-07-14T09:15:00",
-  "latitud": -34.603722,
-  "longitud": -58.381592,
   "fueValido": true
 }
 ```
@@ -102,8 +96,6 @@ GET /api/v1/registro-etapas-delivery/1
 {
   "envioId": 15,
   "etapaAlcanzada": "ENTREGADO",
-  "latitud": -34.603722,
-  "longitud": -58.381592,
   "fueValido": true
 }
 ```
@@ -116,8 +108,6 @@ GET /api/v1/registro-etapas-delivery/1
   "envioId": 15,
   "etapaAlcanzada": "ENTREGADO",
   "fechaHora": "2026-07-14T10:25:00",
-  "latitud": -34.603722,
-  "longitud": -58.381592,
   "fueValido": true
 }
 ```
@@ -138,8 +128,6 @@ GET /api/v1/registro-etapas-delivery/1
 *   **Request Body:**
 ```json
 {
-  "latitud": -34.603900,
-  "longitud": -58.381700,
   "fueValido": false
 }
 ```
@@ -152,8 +140,6 @@ GET /api/v1/registro-etapas-delivery/1
   "envioId": 15,
   "etapaAlcanzada": "ENTREGADO",
   "fechaHora": "2026-07-14T10:25:00",
-  "latitud": -34.603900,
-  "longitud": -58.381700,
   "fueValido": false
 }
 ```
