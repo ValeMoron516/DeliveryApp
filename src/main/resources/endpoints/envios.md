@@ -6,7 +6,6 @@ Método HTTP: POST
 Descripción: Registra una nueva orden de envío en el sistema. El backend calcula automáticamente el costoEnvio cruzando los datos del paquete con la tarifa indicada en tarifaCalculadaId. Nace con estado 'BUSCANDO_REPARTIDOR'.
 
 Request Body:
-
 {
   "clienteId": 10,
   "direccionOrigenId": 3,
