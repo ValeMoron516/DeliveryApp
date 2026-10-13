@@ -15,7 +15,7 @@ import jakarta.persistence.UniqueConstraint;
 @Table(
         name = "registro_etapa_delivery",
         uniqueConstraints = @UniqueConstraint(
-                name = "uk_registro_envio_etapa",
+                name = "fk_registro_envio",
                 columnNames = {"envio_id", "etapa_alcanzada"}
         )
 )
