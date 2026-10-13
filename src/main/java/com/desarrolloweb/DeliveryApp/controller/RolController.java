@@ -5,7 +5,6 @@ import com.desarrolloweb.DeliveryApp.exception.ConflictException;
 import com.desarrolloweb.DeliveryApp.exception.NotFoundException;
 import com.desarrolloweb.DeliveryApp.dtos.rolDTO.RolRequestDTO;
 import com.desarrolloweb.DeliveryApp.dtos.rolDTO.RolResponseDTO;
-import com.desarrolloweb.DeliveryApp.dtos.rolDTO.RolListResponseDTO;
 import com.desarrolloweb.DeliveryApp.service.RolService;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +19,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("api/v1/roles")
 public class RolController {
@@ -30,7 +31,7 @@ public class RolController {
     // ##################################################
 
     @GetMapping
-    public ResponseEntity<RolListResponseDTO> obtenerTodosRoles() {
+    public ResponseEntity<List<RolResponseDTO>> obtenerTodosRoles() {
         return ResponseEntity.status(HttpStatus.OK).body(rolService.obtenerTodosRoles()); // 200
     }
 

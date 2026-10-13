@@ -3,7 +3,6 @@ package com.desarrolloweb.DeliveryApp.service;
 import com.desarrolloweb.DeliveryApp.entity.Role;
 import com.desarrolloweb.DeliveryApp.dtos.rolDTO.RolRequestDTO;
 import com.desarrolloweb.DeliveryApp.dtos.rolDTO.RolResponseDTO;
-import com.desarrolloweb.DeliveryApp.dtos.rolDTO.RolListResponseDTO;
 import com.desarrolloweb.DeliveryApp.exception.BadRequestException;
 import com.desarrolloweb.DeliveryApp.exception.ConflictException;
 import com.desarrolloweb.DeliveryApp.exception.NotFoundException;
@@ -25,11 +24,11 @@ public class RolService {
     // Obtener lista de roles
     public RolListResponseDTO obtenerTodosRoles() {
         List<Roles> roles = rolRepository.findAll();
-        List<RolResponseDTO> dtos = new ArrayList<>();
+        List<RolResponseDTO> rDtos = new ArrayList<>();
         for (Roles r : roles) {
-            dtos.add(new RolResponseDTO(r.getId(), r.getNombre()));
+            rDtos.add(new RolResponseDTO(r.getId(), r.getNombre()));
         }
-        return new RolListResponseDTO(dtos);
+        return rDtos;
     }
 
     // Obtener rol por ID
