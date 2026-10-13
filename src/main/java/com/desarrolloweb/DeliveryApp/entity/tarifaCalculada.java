@@ -1,14 +1,8 @@
 
 package com.desarrolloweb.DeliveryApp.entity;
 
+import jakarta.persistence.*;
 import java.math.BigDecimal;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "tarifas_calculadas")
@@ -18,47 +12,18 @@ public class TarifaCalculada {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "tipo_vehiculo", nullable = false, length = 50)
     private String tipoVehiculo;
-
-    @Column(name = "peso_max_kg", nullable = false, precision = 10, scale = 2)
     private BigDecimal pesoMaxKg;
-
-    @Column(name = "largo_max_cm", nullable = false, precision = 10, scale = 2)
     private BigDecimal largoMaxCm;
-
-    @Column(name = "ancho_max_cm", nullable = false, precision = 10, scale = 2)
     private BigDecimal anchoMaxCm;
-
-    @Column(name = "alto_max_cm", nullable = false, precision = 10, scale = 2)
     private BigDecimal altoMaxCm;
-
-    @Column(name = "precio_base_vehiculo", nullable = false, precision = 10, scale = 2)
     private BigDecimal precioBaseVehiculo;
-
-    @Column(name = "precio_por_peso_kg", nullable = false, precision = 10, scale = 2)
     private BigDecimal precioPorPesoKg;
-
-    @Column(name = "precio_por_volumen_cm3", nullable = false, precision = 10, scale = 4)
     private BigDecimal precioPorVolumenCm3;
 
-    public TarifaCalculada() {
-    }
+    public TarifaCalculada() {}
 
-    public TarifaCalculada(Long id, String tipoVehiculo, BigDecimal pesoMaxKg, BigDecimal largoMaxCm, 
-                           BigDecimal anchoMaxCm, BigDecimal altoMaxCm, BigDecimal precioBaseVehiculo, 
-                           BigDecimal precioPorPesoKg, BigDecimal precioPorVolumenCm3) {
-        this.id = id;
-        this.tipoVehiculo = tipoVehiculo;
-        this.pesoMaxKg = pesoMaxKg;
-        this.largoMaxCm = largoMaxCm;
-        this.anchoMaxCm = anchoMaxCm;
-        this.altoMaxCm = altoMaxCm;
-        this.precioBaseVehiculo = precioBaseVehiculo;
-        this.precioPorPesoKg = precioPorPesoKg;
-        this.precioPorVolumenCm3 = precioPorVolumenCm3;
-    }
-
+    // Getters y Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 

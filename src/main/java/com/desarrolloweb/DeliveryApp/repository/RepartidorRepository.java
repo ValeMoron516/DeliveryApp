@@ -3,10 +3,8 @@ package com.desarrolloweb.DeliveryApp.repository;
 
 import com.desarrolloweb.DeliveryApp.entity.Repartidor;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
 import java.util.List;
 
-@Repository
 public interface RepartidorRepository extends JpaRepository<Repartidor, Long> {
 
     // 1. Buscar repartidores por disponibilidad (0 o 1)
