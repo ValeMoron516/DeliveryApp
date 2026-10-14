@@ -8,6 +8,7 @@ import jakarta.persistence.*;
 @Table(name = "repartidor")
 public class Repartidor {
     @Column(name = "id_repartidor")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Id
     private Long idRepartidor;
 

@@ -8,7 +8,6 @@ el id del usuario con el idRepartidor.
 
 Request Body:
 {
-  "idRepartidor": 5,
   "fotoUrl": "https://cdn.DeliveryApp.com/fotos/repartidor_5.jpg",
   "vehiculoActId": 1
 }
@@ -98,7 +97,7 @@ Response Body:
 ########################################################################################
 
 4. Eliminar perfil de repartidor
-URL: /api/repartidores/{id}
+URL: /api/v1/repartidores/{id}
 Metodo HTML: DELETE
 Descripcion: Eliminar el perfil de un repartidor del sistema mediante su id. Debido a la regla DELETE ON CASCADE, se eliminaran los registros de vehiculos asociados al repartidos
 

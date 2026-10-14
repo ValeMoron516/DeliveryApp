@@ -11,27 +11,18 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 
 @Service
-
 public class RepartidorService {
 
     private final RepartidorRepository repartidorRepository;
 
-
-
-    public RepartidorService (RepartidorRepository repartidorRepository){
+    public RepartidorService(RepartidorRepository repartidorRepository) {
         this.repartidorRepository = repartidorRepository;
     }
 
-    // Registrar nuevo repartidor (Metodo POST)
+    // Registrar nuevo repartidor (Método POST)
     public RepartidorResponseDTO registrarRepartidor(RepartidorCreateDTO createDTO) {
-        // Validar si el usuario ya es repartidor
-        if (repartidorRepository.existsByIdRepartidor(createDTO.getIdRepartidor())) {
-            throw new RuntimeException("El usuario con ID " + createDTO.getIdRepartidor() + " ya tiene un perfil de repartidor activo.");
-        }
-
         // Crear objeto entidad
         Repartidor repartidor = new Repartidor();
-        repartidor.setIdRepartidor(createDTO.getIdRepartidor());
         repartidor.setFotoUrl(createDTO.getFotoUrl());
         repartidor.setVehiculoActId(createDTO.getVehiculoActId());
 
@@ -41,7 +32,7 @@ public class RepartidorService {
         repartidor.setCalificacionPromedio(BigDecimal.ZERO);
         repartidor.setTasaRechazoInterna(0);
 
-        // Guardar en la base de datos
+        // Guardar en la base de datos (el ID se genera automáticamente)
         Repartidor repartidorGuardado = repartidorRepository.save(repartidor);
 
         // Devolver la respuesta mapeada
@@ -58,11 +49,9 @@ public class RepartidorService {
 
     // Obtener perfil por ID (Método GET)
     public RepartidorResponseDTO obtenerPorId(Long idRepartidor) {
-        // Buscar por ID o lanzar excepción si no existe
         Repartidor repartidor = repartidorRepository.findById(idRepartidor)
                 .orElseThrow(() -> new RuntimeException("No se encontró un perfil de repartidor asociado al ID: " + idRepartidor));
 
-        // Devolver la respuesta mapeada a DTO
         return new RepartidorResponseDTO(
                 repartidor.getIdRepartidor(),
                 repartidor.getFotoUrl(),
@@ -76,19 +65,15 @@ public class RepartidorService {
 
     // Actualizar datos de un repartidor (Método PUT)
     public RepartidorResponseDTO actualizarRepartidor(Long idRepartidor, RepartidorUpdateDTO updateDTO) {
-        // 1. Buscar si el repartidor existe
         Repartidor repartidor = repartidorRepository.findById(idRepartidor)
                 .orElseThrow(() -> new RuntimeException("No se puede actualizar. El repartidor con ID: " + idRepartidor + " no existe."));
 
-        // 2. Modificar los campos editables
         repartidor.setFotoUrl(updateDTO.getFotoUrl());
         repartidor.setDisponible(updateDTO.getDisponible());
         repartidor.setVehiculoActId(updateDTO.getVehiculoActId());
 
-        // 3. Guardar cambios en la base de datos
         Repartidor repartidorActualizado = repartidorRepository.save(repartidor);
 
-        // 4. Retornar el perfil completo actualizado
         return new RepartidorResponseDTO(
                 repartidorActualizado.getIdRepartidor(),
                 repartidorActualizado.getFotoUrl(),
@@ -102,7 +87,6 @@ public class RepartidorService {
 
     // Eliminar repartidor (Método DELETE)
     public void eliminarRepartidor(Long idRepartidor) {
-        // Validar si existe antes de eliminar
         if (!repartidorRepository.existsByIdRepartidor(idRepartidor)) {
             throw new RuntimeException("No se puede eliminar. El repartidor con ID: " + idRepartidor + " no existe.");
         }
@@ -149,21 +133,17 @@ public class RepartidorService {
 
     // Obtener historial de pedidos (Método GET)
     public Object obtenerHistorialPedidos(Long idRepartidor) {
-        // Validar que el repartidor exista
         if (!repartidorRepository.existsByIdRepartidor(idRepartidor)) {
             throw new RuntimeException("No se encontró el repartidor con ID: " + idRepartidor);
         }
-        // Retorna la información o lista de pedidos
         return "Historial de pedidos del repartidor ID: " + idRepartidor;
     }
 
-    //Obtener balance del repartidor (Método GET)
+    // Obtener balance del repartidor (Método GET)
     public BigDecimal obtenerBalance(Long idRepartidor) {
         Repartidor repartidor = repartidorRepository.findById(idRepartidor)
                 .orElseThrow(() -> new RuntimeException("No se encontró el repartidor con ID: " + idRepartidor));
 
         return repartidor.getSaldoAcumulado();
     }
-
-
 }
