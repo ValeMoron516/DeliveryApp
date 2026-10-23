@@ -53,4 +53,24 @@ public class GlobalExceptionHandler {
         );
         return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }
+
+    @ExceptionHandler(NotFoundException.class)
+    public ResponseEntity<ErrorResponseDTO> handleNotFoundEx(NotFoundException ex) {
+        return error(HttpStatus.NOT_FOUND, "Not Found", ex.getMessage());
+    }
+
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<ErrorResponseDTO> handleBadRequestEx(BadRequestException ex) {
+        return error(HttpStatus.BAD_REQUEST, "Bad Request", ex.getMessage());
+    }
+
+    @ExceptionHandler(ConflictException.class)
+    public ResponseEntity<ErrorResponseDTO> handleConflictEx(ConflictException ex) {
+        return error(HttpStatus.CONFLICT, "Conflict", ex.getMessage());
+    }
+
+    private ResponseEntity<ErrorResponseDTO> error(HttpStatus status, String titulo, String mensaje) {
+        return ResponseEntity.status(status)
+                .body(new ErrorResponseDTO(LocalDateTime.now(), status.value(), titulo, mensaje));
+    }
 }

@@ -19,7 +19,7 @@ public class CalificacionDelivery {
     @Column(name = "id_repartidor", nullable = false)
     private Long idRepartidor;
 
-    @Column(name = "envio_id", nullable = false)
+    @Column(name = "envio_id", nullable = false, unique = true)
     private Long envioId;
 
     @Column(nullable = false)
