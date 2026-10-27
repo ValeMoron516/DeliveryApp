@@ -8,7 +8,7 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.Optional;
 
-public interface CalificacionDeliveryRepository extends JpaRepository<CalificacionDelivery, Long> {
+public interface CalificacionDeliveryRepository extends JpaRepository<CalificacionDelivery, Integer> {
 
     List<CalificacionDelivery> findByIdRepartidor(Long idRepartidor);
 

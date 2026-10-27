@@ -3,6 +3,7 @@ package com.desarrolloweb.DeliveryApp.controller;
 
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
+import java.util.List;
 
 import com.desarrolloweb.DeliveryApp.dto.*;
 import com.desarrolloweb.DeliveryApp.service.EnvioService;
@@ -22,6 +23,12 @@ public class EnvioController {
     @ResponseStatus(HttpStatus.CREATED)
     public EnvioResponseDTO crearEnvio(@RequestBody CrearEnvioRequestDTO dto) {
         return envioService.crearEnvio(dto);
+    }
+
+    // Listar todos los envíos (GET /api/v1/envios)
+    @GetMapping
+    public List<EnvioResponseDTO> listarEnvios() {
+        return envioService.listarEnvios();
     }
 
     // 2. Obtener detalles de un envío específico (GET /api/v1/envios/{id})

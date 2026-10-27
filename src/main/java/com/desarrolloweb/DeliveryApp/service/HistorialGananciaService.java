@@ -46,7 +46,7 @@ public class HistorialGananciaService {
         Page<HistorialGanancia> paginaHistoriales;
 
         if (idRepartidor != null) {
-            paginaHistoriales = historialGananciaRepository.findByRepartidor_Id(idRepartidor, pageable);
+            paginaHistoriales = historialGananciaRepository.findByRepartidor_IdRepartidor(idRepartidor, pageable);
         } else {
             paginaHistoriales = historialGananciaRepository.findAll(pageable);
         }
@@ -57,8 +57,8 @@ public class HistorialGananciaService {
         for (HistorialGanancia h : historiales) {
             dtos.add(new HistorialGananciaResponseDTO(
                 h.getIdGanancia(),
-                h.getRepartidor() != null ? h.getRepartidor().getId() : null,
-                h.getEnvio() != null ? h.getEnvio().getId() : null,
+                h.getRepartidor() != null ? h.getRepartidor().getIdRepartidor() : null,
+                h.getEnvio() != null ? h.getEnvio().getIdEnvio() : null,
                 h.getMontoLiquidado(),
                 h.getFechaLiquidacion()
             ));
@@ -87,8 +87,8 @@ public class HistorialGananciaService {
         HistorialGanancia h = optH.get();
         return new HistorialGananciaResponseDTO(
             h.getIdGanancia(),
-            h.getRepartidor() != null ? h.getRepartidor().getId() : null,
-            h.getEnvio() != null ? h.getEnvio().getId() : null,
+            h.getRepartidor() != null ? h.getRepartidor().getIdRepartidor() : null,
+            h.getEnvio() != null ? h.getEnvio().getIdEnvio() : null,
             h.getMontoLiquidado(),
             h.getFechaLiquidacion()
         );
@@ -103,7 +103,7 @@ public class HistorialGananciaService {
             throw new BadRequestException("Datos incompletos o inválidos");
         }
 
-        if (historialGananciaRepository.existsByEnvio_Id(dto.getEnvioId())) {
+        if (historialGananciaRepository.existsByEnvio_IdEnvio(dto.getEnvioId())) {
             throw new ConflictException("El envío ya tiene una ganancia liquidada asociada");
         }
 
@@ -126,8 +126,8 @@ public class HistorialGananciaService {
 
         return new HistorialGananciaResponseDTO(
             h.getIdGanancia(),
-            h.getRepartidor().getId(),
-            h.getEnvio().getId(),
+            h.getRepartidor().getIdRepartidor(),
+            h.getEnvio().getIdEnvio(),
             h.getMontoLiquidado(),
             h.getFechaLiquidacion()
         );
@@ -158,8 +158,8 @@ public class HistorialGananciaService {
         }
 
         if (dto.getEnvioId() != null) {
-            if (!historial.getEnvio().getId().equals(dto.getEnvioId())) {
-                if (historialGananciaRepository.existsByEnvio_Id(dto.getEnvioId())) {
+            if (!historial.getEnvio().getIdEnvio().equals(dto.getEnvioId())) {
+                if (historialGananciaRepository.existsByEnvio_IdEnvio(dto.getEnvioId())) {
                     throw new ConflictException("El envío asociado ya está vinculado a otra ganancia");
                 }
                 Optional<Envio> optEnvio = envioRepository.findById(dto.getEnvioId());
@@ -174,8 +174,8 @@ public class HistorialGananciaService {
 
         return new HistorialGananciaResponseDTO(
             h.getIdGanancia(),
-            h.getRepartidor().getId(),
-            h.getEnvio().getId(),
+            h.getRepartidor().getIdRepartidor(),
+            h.getEnvio().getIdEnvio(),
             h.getMontoLiquidado(),
             h.getFechaLiquidacion()
         );

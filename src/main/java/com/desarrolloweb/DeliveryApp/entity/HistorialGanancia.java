@@ -1,4 +1,4 @@
-package com.example.demo.entity;
+package com.desarrolloweb.DeliveryApp.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -16,6 +16,7 @@ public class HistorialGanancia {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.INTEGER)
     @Column(name = "id_ganancia")
     private Long idGanancia;
 

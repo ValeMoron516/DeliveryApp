@@ -1,3 +1,4 @@
+
 package com.desarrolloweb.DeliveryApp.entity;
 
 import jakarta.persistence.Column;
@@ -8,15 +9,22 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 @Entity
 @Table(
-        name = "vehiculos",
-        uniqueConstraints = @UniqueConstraint(name = "fk_vehiculos_tipo", columnNames = "tipo")
+    name = "vehiculo",
+    uniqueConstraints = @UniqueConstraint(
+        name = "fk_vehiculos_tipo",
+        columnNames = "tipo"
+    )
 )
 public class Vehiculo {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @JdbcTypeCode(SqlTypes.INTEGER)
     @Column(name = "id_vehiculo")
     private Long idVehiculo;
 

@@ -14,11 +14,13 @@ public class CalificacionDelivery {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_calificacion")
-    private Long id;
+    private Integer id;
 
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.INTEGER)
     @Column(name = "id_repartidor", nullable = false)
     private Long idRepartidor;
 
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.INTEGER)
     @Column(name = "envio_id", nullable = false)
     private Long envioId;
 

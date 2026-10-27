@@ -8,8 +8,8 @@ import jakarta.persistence.*;
 @Table(name = "repartidor")
 public class Repartidor {
     @Column(name = "id_repartidor")
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Id
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.INTEGER)
     private Long idRepartidor;
 
     @Column(name = "foto_url", length = 255)
@@ -27,6 +27,7 @@ public class Repartidor {
     @Column(name = "tasa_rechazo_interna")
     private Integer tasaRechazoInterna = 0;
 
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.INTEGER)
     @Column(name = "vehiculo_act_id")
     private Long vehiculoActId;
 

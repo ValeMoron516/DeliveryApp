@@ -1,5 +1,26 @@
 METODO: REPARTIDORES (CRUD)
 
+NUEVO ENDPOINT: Listar todos los repartidores
+URL: /api/v1/repartidores
+Metodo HTTP: GET
+Descripcion: Devuelve todos los repartidores registrados. Si no hay ninguno, devuelve [].
+No requiere parametros ni Body.
+Codigo 200 OK. Ejemplo de respuesta:
+[
+  {
+    "idRepartidor": 3,
+    "fotoUrl": null,
+    "disponible": 0,
+    "saldoAcumulado": 0.00,
+    "calificacionPromedio": 0.00,
+    "tasaRechazoInterna": 0,
+    "vehiculoActId": null
+  }
+]
+
+#########################################################################
+
+
 1. Registrar nuevo repartidor
 URL: /api/v1/repartidores
 Metodo HTML: POST

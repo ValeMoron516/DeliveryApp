@@ -1,3 +1,4 @@
+
 package com.desarrolloweb.DeliveryApp.entity;
 
 import java.time.LocalDateTime;
@@ -10,22 +11,28 @@ import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.Convert;
+
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(
-        name = "registro_etapa_delivery",
-        uniqueConstraints = @UniqueConstraint(
-                name = "fk_registro_envio",
-                columnNames = {"envio_id", "etapa_alcanzada"}
-        )
+    name = "registro_etapa_delivery",
+    uniqueConstraints = @UniqueConstraint(
+        name = "fk_registro_envio",
+        columnNames = {"envio_id", "etapa_alcanzada"}
+    )
 )
 public class RegistroEtapaDelivery {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @JdbcTypeCode(SqlTypes.INTEGER)
     @Column(name = "id_registro")
     private Long idRegistro;
 
+    @JdbcTypeCode(SqlTypes.INTEGER)
     @Column(name = "envio_id", nullable = false)
     private Long envioId;
 
@@ -35,6 +42,7 @@ public class RegistroEtapaDelivery {
     @Column(name = "fecha_hora", nullable = false)
     private LocalDateTime fechaHora;
 
+    @Convert(converter = BooleanAsIntegerConverter.class)
     @Column(name = "fue_valido", nullable = false)
     private boolean fueValido;
 

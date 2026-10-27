@@ -199,3 +199,25 @@ Response Body:
   "fechaEntrega": "2026-07-26T02:20:00",
   "message": "El estado del envío se actualizó a ENTREGADO."
 }
+
+##################################################
+
+7. Listar todos los envíos
+URL: /api/v1/envios
+
+Método HTTP: GET
+
+Descripción: Devuelve una lista JSON con todos los envíos registrados, incluidos sus estados, repartidores y costos. Si no hay envíos, devuelve []. No crea, actualiza ni elimina registros.
+
+Respuesta HTTP: 200 OK
+
+Response Body: [
+  {
+    "idEnvio": 3,
+    "clienteId": 6,
+    "repartidorId": 3,
+    "estado": "EN_CAMINO",
+    "costoEnvio": 4500.00
+  }
+]
+(Ejemplo ilustrativo; cada objeto real incluirá los campos definidos en EnvioResponseDTO.)

@@ -10,7 +10,7 @@ import com.desarrolloweb.DeliveryApp.entity.HistorialGanancia;
 @Repository
 public interface HistorialGananciaRepository extends JpaRepository<HistorialGanancia, Long> {
     
-    boolean existsByEnvio_Id(Long envioId);
+    boolean existsByEnvio_IdEnvio(Long envioId);
 
-    Page<HistorialGanancia> findByRepartidor_Id(Long repartidorId, Pageable pageable);
+    Page<HistorialGanancia> findByRepartidor_IdRepartidor(Long repartidorId, Pageable pageable);
 }
