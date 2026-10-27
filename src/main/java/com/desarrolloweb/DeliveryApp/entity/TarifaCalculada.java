@@ -10,6 +10,7 @@ public class TarifaCalculada {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.INTEGER)
     private Long id;
 
     private String tipoVehiculo;

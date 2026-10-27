@@ -26,7 +26,7 @@ public class CalificacionDeliveryController {
     }
 
     @GetMapping("/calificaciones/{id}")
-    public ResponseEntity<CalificacionDeliveryResponseDto> buscarPorId(@PathVariable Long id) {
+    public ResponseEntity<CalificacionDeliveryResponseDto> buscarPorId(@PathVariable Integer id) {
         return ResponseEntity.ok(service.buscarPorId(id));
     }
 
@@ -49,13 +49,13 @@ public class CalificacionDeliveryController {
     }
 
     @PutMapping("/calificaciones/{id}")
-    public ResponseEntity<CalificacionDeliveryResponseDto> actualizar(@PathVariable Long id,
+    public ResponseEntity<CalificacionDeliveryResponseDto> actualizar(@PathVariable Integer id,
                                                                        @RequestBody CalificacionDeliveryRequestDto r) {
         return ResponseEntity.ok(service.actualizar(id, r));
     }
 
     @DeleteMapping("/calificaciones/{id}")
-    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
+    public ResponseEntity<Void> eliminar(@PathVariable Integer id) {
         service.eliminar(id);
         return ResponseEntity.noContent().build();
     }

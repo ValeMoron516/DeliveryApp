@@ -1,6 +1,7 @@
 package com.desarrolloweb.DeliveryApp.controller;
 
 import com.desarrolloweb.DeliveryApp.dto.*;
+import com.desarrolloweb.DeliveryApp.entity.EstadoEnvio;
 import com.desarrolloweb.DeliveryApp.service.RepartidorService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -8,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/repartidores")
@@ -25,6 +27,12 @@ public class RepartidorController {
     public ResponseEntity<RepartidorResponseDTO> registrarRepartidor(@RequestBody RepartidorCreateDTO createDTO) {
         RepartidorResponseDTO nuevoRepartidor = repartidorService.registrarRepartidor(createDTO);
         return new ResponseEntity<>(nuevoRepartidor, HttpStatus.CREATED);
+    }
+
+    // GET: Listar todos los repartidores
+    @GetMapping
+    public ResponseEntity<List<RepartidorResponseDTO>> listarRepartidores() {
+        return ResponseEntity.ok(repartidorService.listarRepartidores());
     }
 
     // 2. GET: Obtener perfil por ID
@@ -68,11 +76,12 @@ public class RepartidorController {
         return ResponseEntity.ok(actualizado);
     }
 
-    // 7. GET: Consultar historial de pedidos
+    // 7. GET: Historial de envíos del repartidor (filtro opcional por estado)
     @GetMapping("/{id}/historial-pedidos")
-    public ResponseEntity<Object> obtenerHistorialPedidos(@PathVariable("id") Long idRepartidor) {
-        Object historial = repartidorService.obtenerHistorialPedidos(idRepartidor);
-        return ResponseEntity.ok(historial);
+    public ResponseEntity<List<EnvioResponseDTO>> obtenerHistorialPedidos(
+            @PathVariable("id") Long idRepartidor,
+            @RequestParam(required = false) EstadoEnvio estado) {
+        return ResponseEntity.ok(repartidorService.obtenerHistorialPedidos(idRepartidor, estado));
     }
 
     // 8. GET: Consultar balance

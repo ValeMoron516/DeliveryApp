@@ -4,7 +4,7 @@ import lombok.*;
 
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor
 public class CalificacionDeliveryResponseDto {
-    private Long id;
+    private Integer id;;
     private Long repartidorId;
     private Long envioId;
     private Integer estrellas;

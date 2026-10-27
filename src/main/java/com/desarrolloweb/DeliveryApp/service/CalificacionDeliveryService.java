@@ -4,6 +4,7 @@ import com.desarrolloweb.DeliveryApp.dto.CalificacionDeliveryRequestDto;
 import com.desarrolloweb.DeliveryApp.dto.CalificacionDeliveryResponseDto;
 import com.desarrolloweb.DeliveryApp.entity.CalificacionDelivery;
 import com.desarrolloweb.DeliveryApp.repository.CalificacionDeliveryRepository;
+import com.desarrolloweb.DeliveryApp.exception.NotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -31,14 +32,14 @@ public class CalificacionDeliveryService {
         return aDto(repository.save(c));
     }
 
-    public CalificacionDeliveryResponseDto buscarPorId(Long id) {
+    public CalificacionDeliveryResponseDto buscarPorId(Integer id) {
         return aDto(repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Calificación no encontrada con id " + id)));
+                .orElseThrow(() -> new NotFoundException("Calificación no encontrada con id " + id)));
     }
 
     public CalificacionDeliveryResponseDto buscarPorEnvio(Long envioId) {
         return aDto(repository.findByEnvioId(envioId)
-                .orElseThrow(() -> new RuntimeException("El envío " + envioId + " no tiene calificación")));
+                .orElseThrow(() -> new NotFoundException("El envío " + envioId + " no tiene calificación")));
     }
 
     public List<CalificacionDeliveryResponseDto> listarPorRepartidor(Long repartidorId) {
@@ -54,18 +55,18 @@ public class CalificacionDeliveryService {
         return repository.countByIdRepartidor(repartidorId);
     }
 
-    public CalificacionDeliveryResponseDto actualizar(Long id, CalificacionDeliveryRequestDto r) {
+    public CalificacionDeliveryResponseDto actualizar(Integer id, CalificacionDeliveryRequestDto r) {
         CalificacionDelivery c = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Calificación no encontrada con id " + id));
+                .orElseThrow(() -> new NotFoundException("Calificación no encontrada con id " + id));
         validarEstrellas(r.getEstrellas());
         c.setEstrellas(r.getEstrellas());
         c.setComentarioAnonimo(r.getComentarioAnonimo());
         return aDto(repository.save(c));
     }
 
-    public void eliminar(Long id) {
+    public void eliminar(Integer id) {
         if (!repository.existsById(id)) {
-            throw new RuntimeException("Calificación no encontrada con id " + id);
+            throw new NotFoundException("Calificación no encontrada con id " + id);
         }
         repository.deleteById(id);
     }

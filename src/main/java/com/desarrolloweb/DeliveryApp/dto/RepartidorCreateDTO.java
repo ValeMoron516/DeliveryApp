@@ -1,6 +1,7 @@
 package com.desarrolloweb.DeliveryApp.dto;
 
 public class RepartidorCreateDTO {
+    private Long usuarioId;
     private String fotoUrl;
     private Long vehiculoActId;
 
@@ -10,6 +11,10 @@ public class RepartidorCreateDTO {
         this.fotoUrl = fotoUrl;
         this.vehiculoActId = vehiculoActId;
     }
+
+    public Long getUsuarioId() { return usuarioId; }
+
+    public void setUsuarioId(Long usuarioId) { this.usuarioId = usuarioId; }
 
     public String getFotoUrl() {
         return fotoUrl;
