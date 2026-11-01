@@ -9,6 +9,7 @@ import com.desarrolloweb.DeliveryApp.repository.EnvioRepository; // Para validar
 import com.desarrolloweb.DeliveryApp.entity.TarifaCalculada;
 import com.desarrolloweb.DeliveryApp.dto.TarifaCalculadaDTO;
 import com.desarrolloweb.DeliveryApp.exception.*;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class TarifaCalculadaService {
@@ -22,6 +23,7 @@ public class TarifaCalculadaService {
     }
 
     // 1. Crear nueva tarifa
+    @Transactional
     public TarifaCalculadaDTO crearTarifa(TarifaCalculadaDTO dto) {
         validarValoresPositivos(dto);
 
@@ -40,14 +42,15 @@ public class TarifaCalculadaService {
     // 3. Obtener tarifa por ID
     public TarifaCalculadaDTO obtenerPorId(Long id) {
         TarifaCalculada tarifa = tarifaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("No se encontró la tarifa calculada con ID: " + id));
+                .orElseThrow(() -> new NotFoundException("No se encontro la tarifa calculada con ID: " + id));
         return mapearADTO(tarifa);
     }
 
     // 4. Actualizar tarifa existente
+    @Transactional
     public TarifaCalculadaDTO actualizarTarifa(Long id, TarifaCalculadaDTO dto) {
         TarifaCalculada tarifaExistente = tarifaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("No se puede actualizar. La tarifa con ID " + id + " no existe."));
+                .orElseThrow(() -> new NotFoundException("La tarifa no existe: " + id));
 
         validarValoresPositivos(dto);
 
@@ -65,14 +68,14 @@ public class TarifaCalculadaService {
     }
 
     // 5. Eliminar tarifa
+    @Transactional
     public void eliminarTarifa(Long id) {
         if (!tarifaRepository.existsById(id)) {
-            throw new RuntimeException("No se encontró la tarifa con ID: " + id + " para eliminar.");
+            throw new NotFoundException("La tarifa no existe: " + id);
         }
 
         // Validación de restricción: ¿Hay envíos usando esta tarifa?
-        boolean tieneEnviosAsociados = envioRepository.findAll().stream()
-                .anyMatch(envio -> envio.getTarifaCalculadaId() != null && envio.getTarifaCalculadaId().equals(id));
+        boolean tieneEnviosAsociados = envioRepository.existsByTarifaCalculadaId(id);
 
         if (tieneEnviosAsociados) {
             throw new EnvioConflictException( "No se puede eliminar la tarifa porque está asociada a envíos existentes en el sistema.");
@@ -83,10 +86,23 @@ public class TarifaCalculadaService {
 
     // Validación auxiliar para el error 400
     private void validarValoresPositivos(TarifaCalculadaDTO dto) {
-        if (dto.getPesoMaxKg() == null || dto.getPesoMaxKg().compareTo(BigDecimal.ZERO) <= 0 ||
-            dto.getPrecioBaseVehiculo() == null || dto.getPrecioBaseVehiculo().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new EnvioBadRequestException("Los precios y dimensiones máximas deben ser mayores a cero.");
+        if (dto == null || dto.getTipoVehiculo() == null || dto.getTipoVehiculo().isBlank()
+                || !positivo(dto.getPesoMaxKg()) || !positivo(dto.getLargoMaxCm())
+                || !positivo(dto.getAnchoMaxCm()) || !positivo(dto.getAltoMaxCm())
+                || !positivo(dto.getPrecioBaseVehiculo())
+                || !noNegativo(dto.getPrecioPorPesoKg())
+                || !noNegativo(dto.getPrecioPorVolumenCm3())) {
+            throw new EnvioBadRequestException(
+                    "La tarifa requiere tipo, limites y precio base positivos; recargos no negativos");
         }
+    }
+
+    private boolean positivo(BigDecimal n) {
+        return n != null && n.signum() > 0;
+    }
+
+    private boolean noNegativo(BigDecimal n) {
+        return n != null && n.signum() >= 0;
     }
 
     private TarifaCalculada mapearAEntity(TarifaCalculadaDTO dto) {

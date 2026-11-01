@@ -21,7 +21,11 @@ public class EnvioResponseDTO {
     private BigDecimal altoPaqueteCm;
     private BigDecimal costoEnvio;
     private String descripcionPaquete;
+    private Long pedidoExternoId;
     private String message;
+    private String receptorNombre;
+    private LocalDateTime fechaConfirmacion;
+    private String observacionesEntrega;
 
     // Getters y Setters
     public Long getIdEnvio() { return idEnvio; }
@@ -68,6 +72,17 @@ public class EnvioResponseDTO {
 
     public String getDescripcionPaquete() { return descripcionPaquete; }
     public void setDescripcionPaquete(String descripcionPaquete) { this.descripcionPaquete = descripcionPaquete; }
+
+    public Long getPedidoExternoId() { return pedidoExternoId; }
+    public void setPedidoExternoId(Long pedidoExternoId) { this.pedidoExternoId = pedidoExternoId; }
+
+    public String getReceptorNombre() { return receptorNombre; }
+    public void setReceptorNombre(String receptorNombre) { this.receptorNombre = receptorNombre; }
+    public LocalDateTime getFechaConfirmacion() { return fechaConfirmacion; }
+    public void setFechaConfirmacion(LocalDateTime fechaConfirmacion) { this.fechaConfirmacion = fechaConfirmacion; }
+    public String getObservacionesEntrega() { return observacionesEntrega; }
+    public void setObservacionesEntrega(String observacionesEntrega) { this.observacionesEntrega = observacionesEntrega; }
+    public boolean isEntregaConfirmada() { return fechaConfirmacion != null; }
 
     public String getMessage() { return message; }
     public void setMessage(String message) { this.message = message; }

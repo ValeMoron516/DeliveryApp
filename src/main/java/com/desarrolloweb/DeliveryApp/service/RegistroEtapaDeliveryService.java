@@ -10,14 +10,18 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.desarrolloweb.DeliveryApp.entity.RegistroEtapaDelivery;
 import com.desarrolloweb.DeliveryApp.repository.RegistroEtapaDeliveryRepository;
+import com.desarrolloweb.DeliveryApp.repository.EnvioRepository;
 
 @Service
 public class RegistroEtapaDeliveryService {
 
     private final RegistroEtapaDeliveryRepository registroRepository;
+    private final EnvioRepository envioRepository;
 
-    public RegistroEtapaDeliveryService(RegistroEtapaDeliveryRepository registroRepository) {
+    public RegistroEtapaDeliveryService(RegistroEtapaDeliveryRepository registroRepository,
+                                       EnvioRepository envioRepository) {
         this.registroRepository = registroRepository;
+        this.envioRepository = envioRepository;
     }
 
     public Page<RegistroEtapaDelivery> listar(int page, int limit) {
@@ -38,29 +42,29 @@ public class RegistroEtapaDeliveryService {
                 ));
     }
 
+    // El historial es una auditoria, no un CRUD manual. Se crea en EnvioService.
     public RegistroEtapaDelivery crear(Long envioId, String etapaAlcanzada, boolean fueValido) {
-        if (registroRepository.existsByEnvioIdAndEtapaAlcanzada(envioId, etapaAlcanzada)) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
-                    "La etapa ya fue registrada para ese envío"
-            );
-        }
-        return registroRepository.save(
-                new RegistroEtapaDelivery(envioId, etapaAlcanzada, fueValido)
-        );
+        throw new ResponseStatusException(HttpStatus.CONFLICT,
+                "Las etapas se registran automaticamente al actualizar el envio");
     }
 
     public RegistroEtapaDelivery actualizarFueValido(Long id, boolean fueValido) {
-        RegistroEtapaDelivery registro = obtenerPorId(id);
-        registro.setFueValido(fueValido);
-        return registroRepository.save(registro);
+        throw new ResponseStatusException(HttpStatus.CONFLICT,
+                "El historial del envio no puede modificarse manualmente");
     }
 
     public void eliminar(Long id) {
-        registroRepository.delete(obtenerPorId(id));
+        throw new ResponseStatusException(HttpStatus.CONFLICT,
+                "El historial del envio no puede eliminarse manualmente");
     }
 
     public List<RegistroEtapaDelivery> listarHistorialPorEnvio(Long envioId) {
+        if (envioId == null || envioId <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "ID de envio invalido");
+        }
+        if (!envioRepository.existsById(envioId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Envio no encontrado");
+        }
         return registroRepository.findAllByEnvioIdOrderByFechaHoraAsc(envioId);
     }
 }

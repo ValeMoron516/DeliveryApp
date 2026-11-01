@@ -13,7 +13,7 @@ import java.util.Set;
 @Service
 public class NotificacionDeliveryService {
 
-    private static final Set<String> CANALES = Set.of("PUSH", "SMS", "EMAIL");
+    private static final Set<String> CANALES = Set.of("IN_APP", "PUSH", "SMS", "EMAIL");
 
     private final NotificacionDeliveryRepository repository;
 
@@ -26,7 +26,7 @@ public class NotificacionDeliveryService {
             throw new RuntimeException("El envío es obligatorio");
         }
         if (r.getTipoCanal() == null || !CANALES.contains(r.getTipoCanal().toUpperCase())) {
-            throw new RuntimeException("El canal debe ser PUSH, SMS o EMAIL");
+            throw new RuntimeException("El canal debe ser IN_APP, PUSH, SMS o EMAIL");
         }
         if (r.getTitulo() == null || r.getTitulo().isBlank()) {
             throw new RuntimeException("El título es obligatorio");

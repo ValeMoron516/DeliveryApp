@@ -41,6 +41,16 @@ public class Envio {
     @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.INTEGER)
     private Long pedidoExternoId;
 
+    // Constancia declarativa de entrega. Requiere la migracion SQL incluida.
+    @Column(name = "receptor_nombre", length = 120)
+    private String receptorNombre;
+
+    @Column(name = "fecha_confirmacion")
+    private LocalDateTime fechaConfirmacion;
+
+    @Column(name = "observaciones_entrega", length = 255)
+    private String observacionesEntrega;
+
     public Envio() {}
 
     // Getters y Setters
@@ -88,6 +98,15 @@ public class Envio {
 
     public String getDescripcionPaquete() { return descripcionPaquete; }
     public void setDescripcionPaquete(String descripcionPaquete) { this.descripcionPaquete = descripcionPaquete; }
+
+    public String getReceptorNombre() { return receptorNombre; }
+    public void setReceptorNombre(String receptorNombre) { this.receptorNombre = receptorNombre; }
+
+    public LocalDateTime getFechaConfirmacion() { return fechaConfirmacion; }
+    public void setFechaConfirmacion(LocalDateTime fechaConfirmacion) { this.fechaConfirmacion = fechaConfirmacion; }
+
+    public String getObservacionesEntrega() { return observacionesEntrega; }
+    public void setObservacionesEntrega(String observacionesEntrega) { this.observacionesEntrega = observacionesEntrega; }
 
     public Long getPedidoExternoId() { return pedidoExternoId; }
     public void setPedidoExternoId(Long pedidoExternoId) { this.pedidoExternoId = pedidoExternoId; }

@@ -60,4 +60,16 @@ public class EnvioController {
     public EnvioResponseDTO actualizarEstado(@PathVariable Long id, @RequestBody ActualizarEstadoRequestDTO dto) {
         return envioService.actualizarEstado(id, dto);
     }
+    // Seguimiento cronologico para el frontend.
+    @GetMapping("/{id}/seguimiento")
+    public SeguimientoEnvioDTO seguimiento(@PathVariable Long id) {
+        return envioService.obtenerSeguimiento(id);
+    }
+
+    // Constancia declarada de que alguien recibio el paquete.
+    @PatchMapping("/{id}/confirmar-entrega")
+    public EnvioResponseDTO confirmarEntrega(@PathVariable Long id,
+                                            @RequestBody ConfirmarEntregaRequestDTO dto) {
+        return envioService.confirmarEntrega(id, dto);
+    }
 }
