@@ -53,6 +53,13 @@ public class TarifaCalculadaService {
                 .orElseThrow(() -> new NotFoundException("La tarifa no existe: " + id));
 
         validarValoresPositivos(dto);
+        // La tarifa ya cotizada forma parte del acuerdo economico del envio.
+        // Modificarla sobre envios existentes altera el criterio con el que fueron asignados.
+        // Crear una tarifa nueva para precios o tipos de vehiculo nuevos.
+        if (envioRepository.existsByTarifaCalculadaId(id)) {
+            throw new EnvioConflictException(
+                    "Esta tarifa tiene envios asociados; crea otra tarifa en lugar de modificarla");
+        }
 
         tarifaExistente.setTipoVehiculo(dto.getTipoVehiculo());
         tarifaExistente.setPesoMaxKg(dto.getPesoMaxKg());

@@ -23,6 +23,7 @@ class EnvioServiceTest {
     @Mock EnvioRepository envioRepository;
     @Mock TarifaCalculadaRepository tarifaRepository;
     @Mock RepartidorRepository repartidorRepository;
+    @Mock VehiculoRepository vehiculoRepository;
     @Mock UsuarioRepository usuarioRepository;
     @Mock DireccionRepository direccionRepository;
     @Mock RegistroEtapaDeliveryRepository registroRepository;
@@ -45,6 +46,7 @@ class EnvioServiceTest {
     private TarifaCalculada tarifa() {
         TarifaCalculada t = new TarifaCalculada();
         t.setId(4L);
+        t.setTipoVehiculo("BICICLETA");
         t.setPesoMaxKg(new BigDecimal("10"));
         t.setLargoMaxCm(new BigDecimal("30"));
         t.setAnchoMaxCm(new BigDecimal("30"));

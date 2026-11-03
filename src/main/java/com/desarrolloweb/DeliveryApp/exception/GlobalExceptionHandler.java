@@ -43,6 +43,14 @@ public class GlobalExceptionHandler {
                 LocalDateTime.now(), 409, "Conflict", ex.getMessage()));
     }
 
+    @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponseDTO> handleDatosDuplicados(
+            org.springframework.dao.DataIntegrityViolationException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponseDTO(
+                LocalDateTime.now(), 409, "Conflict",
+                "Solicitud duplicada o datos incompatibles. Comprueba si el envio ya se creo."));
+    }
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ErrorResponseDTO> handleNotFound(RuntimeException ex) {
         if (ex.getMessage() != null && ex.getMessage().contains("No se encontró")) {

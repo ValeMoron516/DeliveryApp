@@ -1,9 +1,9 @@
 package com.desarrolloweb.DeliveryApp.service;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Comparator;
 import java.util.Set;
 
 import org.springframework.stereotype.Service;
@@ -22,6 +22,7 @@ public class EnvioService {
     private final EnvioRepository envioRepository;
     private final TarifaCalculadaRepository tarifaRepository;
     private final RepartidorRepository repartidorRepository;
+    private final VehiculoRepository vehiculoRepository;
     private final UsuarioRepository usuarioRepository;
     private final DireccionRepository direccionRepository;
     private final RegistroEtapaDeliveryRepository registroRepository;
@@ -30,6 +31,7 @@ public class EnvioService {
     public EnvioService(EnvioRepository envioRepository,
                         TarifaCalculadaRepository tarifaRepository,
                         RepartidorRepository repartidorRepository,
+                        VehiculoRepository vehiculoRepository,
                         UsuarioRepository usuarioRepository,
                         DireccionRepository direccionRepository,
                         RegistroEtapaDeliveryRepository registroRepository,
@@ -37,6 +39,7 @@ public class EnvioService {
         this.envioRepository = envioRepository;
         this.tarifaRepository = tarifaRepository;
         this.repartidorRepository = repartidorRepository;
+        this.vehiculoRepository = vehiculoRepository;
         this.usuarioRepository = usuarioRepository;
         this.direccionRepository = direccionRepository;
         this.registroRepository = registroRepository;
@@ -149,11 +152,66 @@ public class EnvioService {
                 Set.of(EstadoEnvio.REPARTIDOR_ASIGNADO, EstadoEnvio.EN_ORIGEN, EstadoEnvio.EN_CAMINO))) {
             throw new EnvioConflictException("El repartidor tiene un envio en curso");
         }
+        // Una cotizacion para bicicleta no puede cumplirse con una moto (ni viceversa).
+        // Validar antes de guardar evita asignaciones con precios y limites incorrectos.
+        Long vehiculoId = repartidor.getVehiculoActId();
+        if (vehiculoId == null) {
+            throw new EnvioConflictException("El repartidor no tiene un vehiculo activo");
+        }
+        Vehiculo vehiculo = vehiculoRepository.findById(vehiculoId)
+                .orElseThrow(() -> new EnvioConflictException("El vehiculo del repartidor no existe"));
+        TarifaCalculada tarifa = obtenerTarifa(envio.getTarifaCalculadaId());
+        String tipoVehiculo = vehiculo.getTipo();
+        String tipoTarifa = tarifa.getTipoVehiculo();
+        if (!CotizadorTarifa.mismoTipo(tipoVehiculo, tipoTarifa)) {
+            throw new EnvioConflictException("El vehiculo del repartidor (" + tipoVehiculo
+                    + ") no coincide con la tarifa del envio (" + tipoTarifa + ")");
+        }
         envio.setRepartidorId(repartidor.getIdRepartidor());
         envio.setEstado(EstadoEnvio.REPARTIDOR_ASIGNADO);
         Envio guardado = envioRepository.save(envio);
         registrarAvance(guardado, EstadoEnvio.REPARTIDOR_ASIGNADO, LocalDateTime.now());
         return mapearAResponseDTO(guardado, "Repartidor asignado con exito");
+    }
+
+    /** Busca un repartidor compatible automaticamente, sin cambiar la tarifa aceptada.
+     *  Se usa al crear la solicitud y desde el reintento programado.
+     */
+    @Transactional
+    public EnvioResponseDTO intentarAsignacionAutomatica(Long id) {
+        Envio envio = obtenerBloqueado(id);
+        if (!Boolean.TRUE.equals(envio.getAsignacionAutomatica())
+                || envio.getEstado() != EstadoEnvio.BUSCANDO_REPARTIDOR
+                || envio.getRepartidorId() != null) {
+            return mapearAResponseDTO(envio, null);
+        }
+        TarifaCalculada tarifa = obtenerTarifa(envio.getTarifaCalculadaId());
+        List<Repartidor> candidatos = new java.util.ArrayList<>(repartidorRepository.findByDisponible(1));
+        candidatos.sort(Comparator.comparing(Repartidor::getIdRepartidor));
+        for (Repartidor previo : candidatos) {
+            // Bloqueo pesimista: dos envios simultaneos no toman el mismo repartidor.
+            Repartidor repartidor = repartidorRepository.buscarParaAsignar(previo.getIdRepartidor())
+                    .orElse(null);
+            if (repartidor == null || !Integer.valueOf(1).equals(repartidor.getDisponible())
+                    || repartidor.getVehiculoActId() == null) {
+                continue;
+            }
+            Vehiculo vehiculo = vehiculoRepository.findById(repartidor.getVehiculoActId()).orElse(null);
+            if (vehiculo == null || !CotizadorTarifa.mismoTipo(
+                    vehiculo.getTipo(), tarifa.getTipoVehiculo())) {
+                continue;
+            }
+            if (envioRepository.existsByRepartidorIdAndEstadoIn(repartidor.getIdRepartidor(),
+                    Set.of(EstadoEnvio.REPARTIDOR_ASIGNADO, EstadoEnvio.EN_ORIGEN, EstadoEnvio.EN_CAMINO))) {
+                continue;
+            }
+            envio.setRepartidorId(repartidor.getIdRepartidor());
+            envio.setEstado(EstadoEnvio.REPARTIDOR_ASIGNADO);
+            Envio guardado = envioRepository.save(envio);
+            registrarAvance(guardado, EstadoEnvio.REPARTIDOR_ASIGNADO, LocalDateTime.now());
+            return mapearAResponseDTO(guardado, "Repartidor compatible asignado automaticamente");
+        }
+        return mapearAResponseDTO(envio, "Sin repartidores compatibles; solicitud en espera, mismo precio");
     }
 
     @Transactional
@@ -314,61 +372,11 @@ public class EnvioService {
     }
 
     private BigDecimal calcularCosto(TarifaCalculada t, BigDecimal peso,
-                                     BigDecimal largo, BigDecimal ancho, BigDecimal alto) {
-        validarPeso(peso);
-        validarDimensiones(largo, ancho, alto);
-        if (t.getPesoMaxKg() != null && peso.compareTo(t.getPesoMaxKg()) > 0) {
-            throw new EnvioBadRequestException("El peso excede el maximo de la tarifa");
-        }
-        if (largo != null && (
-                (t.getLargoMaxCm() != null && largo.compareTo(t.getLargoMaxCm()) > 0)
-                || (t.getAnchoMaxCm() != null && ancho.compareTo(t.getAnchoMaxCm()) > 0)
-                || (t.getAltoMaxCm() != null && alto.compareTo(t.getAltoMaxCm()) > 0))) {
-            throw new EnvioBadRequestException("Las dimensiones exceden el maximo de la tarifa");
-        }
-        if (t.getPrecioBaseVehiculo() == null || t.getPrecioBaseVehiculo().signum() < 0) {
-            throw new EnvioConflictException("La tarifa no tiene un precio base valido");
-        }
-        BigDecimal porKg = t.getPrecioPorPesoKg() == null ? BigDecimal.ZERO : t.getPrecioPorPesoKg();
-        BigDecimal porCm3 = t.getPrecioPorVolumenCm3() == null ? BigDecimal.ZERO : t.getPrecioPorVolumenCm3();
-        if (porKg.signum() < 0 || porCm3.signum() < 0) {
-            throw new EnvioConflictException("La tarifa tiene coeficientes negativos");
-        }
-        if (porCm3.signum() > 0 && largo == null) {
-            throw new EnvioBadRequestException("Esta tarifa requiere las dimensiones del paquete");
-        }
-        BigDecimal volumen = largo == null ? BigDecimal.ZERO : largo.multiply(ancho).multiply(alto);
-        // Precio = base del vehiculo + kg * precio por kg + cm3 * precio por cm3.
-        return t.getPrecioBaseVehiculo().add(peso.multiply(porKg))
-                .add(volumen.multiply(porCm3)).setScale(2, RoundingMode.HALF_UP);
+            BigDecimal largo, BigDecimal ancho, BigDecimal alto) {
+        return CotizadorTarifa.calcular(t, peso, largo, ancho, alto);
     }
 
     private EnvioResponseDTO mapearAResponseDTO(Envio envio, String mensaje) {
-        EnvioResponseDTO dto = new EnvioResponseDTO();
-        dto.setIdEnvio(envio.getIdEnvio());
-        dto.setClienteId(envio.getClienteId());
-        dto.setRepartidorId(envio.getRepartidorId());
-        dto.setDireccionOrigenId(envio.getDireccionOrigenId());
-        dto.setDireccionDestinoId(envio.getDireccionDestinoId());
-        dto.setTarifaCalculadaId(envio.getTarifaCalculadaId());
-        dto.setFechaSolicitud(envio.getFechaSolicitud());
-        dto.setFechaEntrega(envio.getFechaEntrega());
-        dto.setEstado(envio.getEstado());
-        dto.setPesoPaqueteKg(envio.getPesoPaqueteKg());
-        dto.setLargoPaqueteCm(envio.getLargoPaqueteCm());
-        dto.setAnchoPaqueteCm(envio.getAnchoPaqueteCm());
-        dto.setAltoPaqueteCm(envio.getAltoPaqueteCm());
-        dto.setCostoEnvio(envio.getCostoEnvio());
-        dto.setDescripcionPaquete(envio.getDescripcionPaquete());
-        dto.setPedidoExternoId(envio.getPedidoExternoId());
-        // El nombre del receptor y las observaciones son datos privados.
-        // Solo se revelan en la respuesta inmediata a quien acaba de confirmar la entrega.
-        if (mensaje != null && mensaje.startsWith("Recepcion registrada para:")) {
-            dto.setReceptorNombre(envio.getReceptorNombre());
-            dto.setObservacionesEntrega(envio.getObservacionesEntrega());
-        }
-        dto.setFechaConfirmacion(envio.getFechaConfirmacion());
-        dto.setMessage(mensaje);
-        return dto;
+        return EnvioResponseMapper.mapear(envio, mensaje);
     }
 }

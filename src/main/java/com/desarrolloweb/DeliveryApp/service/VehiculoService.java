@@ -8,14 +8,18 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.desarrolloweb.DeliveryApp.entity.Vehiculo;
 import com.desarrolloweb.DeliveryApp.repository.VehiculoRepository;
+import com.desarrolloweb.DeliveryApp.repository.RepartidorRepository;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class VehiculoService {
 
     private final VehiculoRepository vehiculoRepository;
+    private final RepartidorRepository repartidorRepository;
 
-    public VehiculoService(VehiculoRepository vehiculoRepository) {
+    public VehiculoService(VehiculoRepository vehiculoRepository, RepartidorRepository repartidorRepository) {
         this.vehiculoRepository = vehiculoRepository;
+        this.repartidorRepository = repartidorRepository;
     }
 
     public Page<Vehiculo> listar(int page, int limit) {
@@ -46,9 +50,15 @@ public class VehiculoService {
         return vehiculoRepository.save(new Vehiculo(tipo, descripcion));
     }
 
+    @Transactional
     public Vehiculo actualizar(Long id, String tipo, String descripcion) {
         Vehiculo vehiculo = obtenerPorId(id);
         if (tipo != null) {
+            if (!tipo.strip().equalsIgnoreCase(vehiculo.getTipo().strip())
+                    && repartidorRepository.existsByVehiculoActId(id)) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT,
+                        "No se puede cambiar el tipo de un vehiculo asociado a repartidores");
+            }
             vehiculoRepository.findByTipo(tipo)
                     .filter(otro -> !otro.getIdVehiculo().equals(id))
                     .ifPresent(otro -> {
@@ -71,7 +81,13 @@ public class VehiculoService {
         return vehiculoRepository.save(vehiculo);
     }
 
+    @Transactional
     public void eliminar(Long id) {
-        vehiculoRepository.delete(obtenerPorId(id));
+        Vehiculo vehiculo = obtenerPorId(id);
+        if (repartidorRepository.existsByVehiculoActId(id)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "No se puede eliminar un vehiculo asociado a repartidores");
+        }
+        vehiculoRepository.delete(vehiculo);
     }
 }

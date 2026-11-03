@@ -24,6 +24,7 @@ class SeguimientoEnvioServiceTest {
     @Mock EnvioRepository envioRepository;
     @Mock TarifaCalculadaRepository tarifaRepository;
     @Mock RepartidorRepository repartidorRepository;
+    @Mock VehiculoRepository vehiculoRepository;
     @Mock UsuarioRepository usuarioRepository;
     @Mock DireccionRepository direccionRepository;
     @Mock RegistroEtapaDeliveryRepository registroRepository;

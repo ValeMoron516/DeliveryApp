@@ -10,6 +10,9 @@ public class RepartidorResponseDTO {
     private BigDecimal calificacionPromedio;
     private int tasaRechazoInterna;
     private Long vehiculoActId;
+    // Valores calculados para informar la ocupacion real sin cambiar el campo "disponible".
+    private boolean ocupado;
+    private boolean puedeRecibirEnvios;
 
     public RepartidorResponseDTO(){}
 
@@ -80,5 +83,21 @@ public class RepartidorResponseDTO {
         this.vehiculoActId = vehiculoActId;
     }
 
+
+    public boolean isOcupado() {
+        return ocupado;
+    }
+
+    public void setOcupado(boolean ocupado) {
+        this.ocupado = ocupado;
+    }
+
+    public boolean isPuedeRecibirEnvios() {
+        return puedeRecibirEnvios;
+    }
+
+    public void setPuedeRecibirEnvios(boolean puedeRecibirEnvios) {
+        this.puedeRecibirEnvios = puedeRecibirEnvios;
+    }
 
 }

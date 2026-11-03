@@ -14,8 +14,12 @@ import org.springframework.data.repository.query.Param;
 public interface EnvioRepository extends JpaRepository<Envio, Long> {
     List<Envio> findByRepartidorIdOrderByIdEnvioDesc(Long repartidorId);
     List<Envio> findByRepartidorIdAndEstadoOrderByIdEnvioDesc(Long repartidorId, EstadoEnvio estado);
+    List<Envio> findByRepartidorIdAndEstadoInOrderByIdEnvioDesc(
+            Long repartidorId, Collection<EstadoEnvio> estados);
 
+    Optional<Envio> findByClaveSolicitud(String claveSolicitud);
     boolean existsByTarifaCalculadaId(Long tarifaCalculadaId);
+    List<Envio> findByEstadoAndAsignacionAutomaticaTrueOrderByFechaSolicitudAsc(EstadoEnvio estado);
     boolean existsByRepartidorId(Long repartidorId);
     boolean existsByRepartidorIdAndEstadoIn(Long repartidorId, Collection<EstadoEnvio> estados);
 

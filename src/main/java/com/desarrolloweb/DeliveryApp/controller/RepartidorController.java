@@ -84,6 +84,13 @@ public class RepartidorController {
         return ResponseEntity.ok(repartidorService.obtenerHistorialPedidos(idRepartidor, estado));
     }
 
+    // Consulta separada para la pantalla de entregas pendientes del repartidor.
+    @GetMapping("/{id}/envios-activos")
+    public ResponseEntity<List<EnvioResponseDTO>> obtenerEnviosActivos(
+            @PathVariable("id") Long idRepartidor) {
+        return ResponseEntity.ok(repartidorService.obtenerEnviosActivos(idRepartidor));
+    }
+
     // 8. GET: Consultar balance
     @GetMapping("/{id}/balance")
     public ResponseEntity<BigDecimal> obtenerBalance(@PathVariable("id") Long idRepartidor) {

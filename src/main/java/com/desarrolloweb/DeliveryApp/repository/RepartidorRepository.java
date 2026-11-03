@@ -12,6 +12,7 @@ import org.springframework.data.repository.query.Param;
 public interface RepartidorRepository extends JpaRepository<Repartidor, Long> {
     List<Repartidor> findByDisponible(Integer disponible);
     boolean existsByIdRepartidor(Long idRepartidor);
+    boolean existsByVehiculoActId(Long vehiculoActId);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select r from Repartidor r where r.idRepartidor = :id")

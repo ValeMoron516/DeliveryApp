@@ -13,9 +13,12 @@ import com.desarrolloweb.DeliveryApp.service.EnvioService;
 public class EnvioController {
 
     private final EnvioService envioService;
+    private final com.desarrolloweb.DeliveryApp.service.ServicioCotizacionAutomatica cotizacionAutomatica;
 
-    public EnvioController(EnvioService envioService) {
+    public EnvioController(EnvioService envioService,
+            com.desarrolloweb.DeliveryApp.service.ServicioCotizacionAutomatica cotizacionAutomatica) {
         this.envioService = envioService;
+        this.cotizacionAutomatica = cotizacionAutomatica;
     }
 
     // 1. Cotizar y crear solicitud de envío (POST /api/v1/envios)
@@ -23,6 +26,18 @@ public class EnvioController {
     @ResponseStatus(HttpStatus.CREATED)
     public EnvioResponseDTO crearEnvio(@RequestBody CrearEnvioRequestDTO dto) {
         return envioService.crearEnvio(dto);
+    }
+
+    // Cliente: 1) cotiza sin crear registros, 2) confirma el precio elegido.
+    @PostMapping("/cotizar")
+    public CotizacionEnvioResponseDTO cotizar(@RequestBody CotizarEnvioRequestDTO dto) {
+        return cotizacionAutomatica.cotizar(dto);
+    }
+
+    @PostMapping("/solicitar")
+    @ResponseStatus(HttpStatus.CREATED)
+    public EnvioResponseDTO solicitar(@RequestBody SolicitarEnvioRequestDTO dto) {
+        return cotizacionAutomatica.solicitar(dto);
     }
 
     // Listar todos los envíos (GET /api/v1/envios)
