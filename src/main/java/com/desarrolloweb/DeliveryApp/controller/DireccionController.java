@@ -1,5 +1,6 @@
 package com.desarrolloweb.DeliveryApp.controller;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -10,6 +11,7 @@ import com.desarrolloweb.DeliveryApp.service.DireccionService;
 import java.util.List;
 
 @RestController
+@PreAuthorize("hasRole('ADMIN')")
 @RequestMapping("/api/v1/usuarios/{usuarioId}/direcciones")
 public class DireccionController {
 
@@ -21,6 +23,7 @@ public class DireccionController {
     }
 
     @PostMapping
+    @PreAuthorize("@deliveryAccess.userOrAdmin(#usuarioId)")
     public ResponseEntity<DireccionResponseDto> crear(@PathVariable Long usuarioId,
             @RequestBody DireccionRequestDto request) {
         DireccionResponseDto creada = direccionService.crear(usuarioId, request);
@@ -28,12 +31,14 @@ public class DireccionController {
     }
 
     @GetMapping
+    @PreAuthorize("@deliveryAccess.userOrAdmin(#usuarioId)")
     public ResponseEntity<List<DireccionResponseDto>> listarPorUsuario(@PathVariable Long usuarioId) {
         List<DireccionResponseDto> direcciones = direccionService.listarPorUsuario(usuarioId);
         return new ResponseEntity<>(direcciones, HttpStatus.OK);
     }
 
     @GetMapping("/{direccionId}")
+    @PreAuthorize("@deliveryAccess.userOrAdmin(#usuarioId)")
     public ResponseEntity<DireccionResponseDto> buscarPorId(@PathVariable Long usuarioId,
             @PathVariable Long direccionId) {
         DireccionResponseDto direccion = direccionService.buscarPorId(usuarioId, direccionId);
@@ -41,6 +46,7 @@ public class DireccionController {
     }
 
     @PutMapping("/{direccionId}")
+    @PreAuthorize("@deliveryAccess.userOrAdmin(#usuarioId)")
     public ResponseEntity<DireccionResponseDto> actualizar(@PathVariable Long usuarioId, @PathVariable Long direccionId,
             @RequestBody DireccionRequestDto request) {
         DireccionResponseDto actualizado = direccionService.actualizar(usuarioId, direccionId, request);
@@ -48,6 +54,7 @@ public class DireccionController {
     }
 
     @DeleteMapping("/{direccionId}")
+    @PreAuthorize("@deliveryAccess.userOrAdmin(#usuarioId)")
     public ResponseEntity<Void> eliminar(@PathVariable Long usuarioId, @PathVariable Long direccionId) {
         direccionService.eliminar(usuarioId, direccionId);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);

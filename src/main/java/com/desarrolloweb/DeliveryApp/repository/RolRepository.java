@@ -8,4 +8,5 @@ import com.desarrolloweb.DeliveryApp.entity.Roles;
 @Repository
 public interface RolRepository extends JpaRepository<Roles, Integer> {
     boolean existsByNombre(String nombre);
+    java.util.Optional<Roles> findByNombreIgnoreCase(String nombre);
 }

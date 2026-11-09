@@ -13,6 +13,8 @@ import org.springframework.data.repository.query.Param;
 
 public interface EnvioRepository extends JpaRepository<Envio, Long> {
     List<Envio> findByRepartidorIdOrderByIdEnvioDesc(Long repartidorId);
+    List<Envio> findByClienteIdOrderByIdEnvioDesc(Long clienteId);
+    List<Envio> findByEstadoOrderByIdEnvioDesc(EstadoEnvio estado);
     List<Envio> findByRepartidorIdAndEstadoOrderByIdEnvioDesc(Long repartidorId, EstadoEnvio estado);
     List<Envio> findByRepartidorIdAndEstadoInOrderByIdEnvioDesc(
             Long repartidorId, Collection<EstadoEnvio> estados);

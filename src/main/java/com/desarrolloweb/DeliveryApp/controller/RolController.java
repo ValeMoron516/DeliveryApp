@@ -7,6 +7,7 @@ import com.desarrolloweb.DeliveryApp.dtos.rolDTO.RolRequestDTO;
 import com.desarrolloweb.DeliveryApp.dtos.rolDTO.RolResponseDTO;
 import com.desarrolloweb.DeliveryApp.service.RolService;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
+@PreAuthorize("hasRole('ADMIN')")
 @RequestMapping("api/v1/roles")
 public class RolController {
 

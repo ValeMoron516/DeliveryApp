@@ -1,6 +1,7 @@
 
 package com.desarrolloweb.DeliveryApp.controller;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
 import java.util.List;
@@ -9,6 +10,7 @@ import com.desarrolloweb.DeliveryApp.dto.TarifaCalculadaDTO;
 import com.desarrolloweb.DeliveryApp.service.TarifaCalculadaService;
 
 @RestController
+@PreAuthorize("hasRole('ADMIN')")
 @RequestMapping("/api/v1/tarifas")
 public class TarifaCalculadaController {
 

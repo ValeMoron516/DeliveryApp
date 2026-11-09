@@ -1,6 +1,12 @@
 package com.desarrolloweb.DeliveryApp.entity;
 
 import java.time.LocalDateTime;
+import java.util.Set;
+import java.util.HashSet;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.JoinColumn;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -34,6 +40,16 @@ public class Usuario {
 
     @Column (nullable = false)
     private LocalDateTime fechaRegistro;
+
+    // Requiere la migracion SQL documentada. Los roles no se asignan desde el frontend.
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(name = "usuario_roles",
+            joinColumns = @JoinColumn(name = "usuario_id"),
+            inverseJoinColumns = @JoinColumn(name = "rol_id"))
+    private Set<Roles> roles = new HashSet<>();
+
+    public Set<Roles> getRoles() { return roles; }
+    public void setRoles(Set<Roles> roles) { this.roles = roles; }
 
     public Usuario(Long id, String nombre, String apellido, String telefono, String email, String password, LocalDateTime fechaRegistro){
         this.id = id;

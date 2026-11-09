@@ -62,6 +62,8 @@ class EnvioServiceTest {
         when(usuarioRepository.existsById(1L)).thenReturn(true);
         when(direccionRepository.existsById(2L)).thenReturn(true);
         when(direccionRepository.existsById(3L)).thenReturn(true);
+        when(direccionRepository.findByIdAndUsuarioId(2L, 1L)).thenReturn(Optional.of(new Direccion()));
+        when(direccionRepository.findByIdAndUsuarioId(3L, 1L)).thenReturn(Optional.of(new Direccion()));
         when(tarifaRepository.findById(4L)).thenReturn(Optional.of(tarifa()));
         when(envioRepository.save(any(Envio.class))).thenAnswer(inv -> {
             Envio e = inv.getArgument(0);
@@ -93,6 +95,8 @@ class EnvioServiceTest {
         when(usuarioRepository.existsById(1L)).thenReturn(true);
         when(direccionRepository.existsById(2L)).thenReturn(true);
         when(direccionRepository.existsById(3L)).thenReturn(true);
+        when(direccionRepository.findByIdAndUsuarioId(2L, 1L)).thenReturn(Optional.of(new Direccion()));
+        when(direccionRepository.findByIdAndUsuarioId(3L, 1L)).thenReturn(Optional.of(new Direccion()));
         when(tarifaRepository.findById(4L)).thenReturn(Optional.of(tarifa()));
         assertThrows(EnvioBadRequestException.class, () -> service.crearEnvio(r));
         verify(envioRepository, never()).save(any(Envio.class));

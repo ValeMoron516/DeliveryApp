@@ -164,6 +164,10 @@ public class ServicioCotizacionAutomatica {
                 || !direcciones.existsById(dto.getDireccionDestinoId())) {
             throw new NotFoundException("Direccion de origen o destino no encontrada");
         }
+        if (direcciones.findByIdAndUsuarioId(dto.getDireccionOrigenId(), dto.getClienteId()).isEmpty()
+                || direcciones.findByIdAndUsuarioId(dto.getDireccionDestinoId(), dto.getClienteId()).isEmpty()) {
+            throw new EnvioBadRequestException("Las direcciones deben pertenecer al cliente");
+        }
         if (dto.getPesoPaqueteKg() == null || dto.getPesoPaqueteKg().signum() <= 0) {
             throw new EnvioBadRequestException("El peso del paquete debe ser positivo");
         }

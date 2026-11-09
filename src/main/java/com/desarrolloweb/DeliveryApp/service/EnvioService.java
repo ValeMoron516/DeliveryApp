@@ -64,6 +64,10 @@ public class EnvioService {
                 || !direccionRepository.existsById(dto.getDireccionDestinoId())) {
             throw new NotFoundException("Direccion de origen o destino no encontrada");
         }
+        if (direccionRepository.findByIdAndUsuarioId(dto.getDireccionOrigenId(), dto.getClienteId()).isEmpty()
+                || direccionRepository.findByIdAndUsuarioId(dto.getDireccionDestinoId(), dto.getClienteId()).isEmpty()) {
+            throw new EnvioBadRequestException("Las direcciones deben pertenecer al cliente");
+        }
         TarifaCalculada tarifa = obtenerTarifa(dto.getTarifaCalculadaId());
         BigDecimal costo = calcularCosto(tarifa, dto.getPesoPaqueteKg(),
                 dto.getLargoPaqueteCm(), dto.getAnchoPaqueteCm(), dto.getAltoPaqueteCm());
@@ -85,6 +89,28 @@ public class EnvioService {
         Envio creado = envioRepository.save(envio);
         registrarAvance(creado, EstadoEnvio.BUSCANDO_REPARTIDOR, creado.getFechaSolicitud());
         return mapearAResponseDTO(creado, null);
+    }
+
+    /** Oferta publica a repartidores autenticados, sin direcciones ni datos personales. */
+    @Transactional(readOnly = true)
+    public List<OfertaEnvioDTO> listarOfertas() {
+        return envioRepository.findByEstadoOrderByIdEnvioDesc(EstadoEnvio.BUSCANDO_REPARTIDOR)
+                .stream().filter(e -> e.getRepartidorId() == null)
+                .map(e -> new OfertaEnvioDTO(e.getIdEnvio(),
+                        obtenerTarifa(e.getTarifaCalculadaId()).getTipoVehiculo(),
+                        e.getCostoEnvio())).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<EnvioResponseDTO> listarEnviosCliente(Long clienteId) {
+        return envioRepository.findByClienteIdOrderByIdEnvioDesc(clienteId)
+                .stream().map(e -> mapearAResponseDTO(e, null)).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<EnvioResponseDTO> listarEnviosRepartidor(Long repartidorId) {
+        return envioRepository.findByRepartidorIdOrderByIdEnvioDesc(repartidorId)
+                .stream().map(e -> mapearAResponseDTO(e, null)).toList();
     }
 
     @Transactional(readOnly = true)

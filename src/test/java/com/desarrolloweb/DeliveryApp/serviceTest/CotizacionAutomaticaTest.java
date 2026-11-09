@@ -55,6 +55,8 @@ class CotizacionAutomaticaTest {
         when(usuarios.existsById(2L)).thenReturn(true);
         when(direcciones.existsById(4L)).thenReturn(true);
         when(direcciones.existsById(9L)).thenReturn(true);
+        when(direcciones.findByIdAndUsuarioId(4L, 2L)).thenReturn(Optional.of(new Direccion()));
+        when(direcciones.findByIdAndUsuarioId(9L, 2L)).thenReturn(Optional.of(new Direccion()));
     }
 
     @Test void recomiendaTarifaMasBarataConRepartidorDisponible() {

@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +26,7 @@ import com.desarrolloweb.DeliveryApp.entity.RegistroEtapaDelivery;
 import com.desarrolloweb.DeliveryApp.service.RegistroEtapaDeliveryService;
 
 @RestController
+@PreAuthorize("hasRole('ADMIN')")
 public class RegistroEtapaDeliveryController {
 
     private final RegistroEtapaDeliveryService registroService;
@@ -88,6 +90,7 @@ public class RegistroEtapaDeliveryController {
     }
 
     @GetMapping("/api/v1/envios/{envioId}/registro-etapas")
+    @PreAuthorize("@deliveryAccess.readShipment(#envioId)")
     public Map<String, List<HistorialItem>> listarHistorial(@PathVariable Long envioId) {
         if (envioId < 1) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El identificador del envío debe ser positivo");

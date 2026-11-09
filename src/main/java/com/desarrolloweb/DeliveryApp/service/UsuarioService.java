@@ -14,16 +14,19 @@ import java.util.List;
 @Service
 public class UsuarioService {
     private final UsuarioRepository usuarioRepository;
+    private final com.desarrolloweb.DeliveryApp.repository.RolRepository rolRepository;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     @Autowired
-    public UsuarioService(UsuarioRepository usuarioRepository){
+    public UsuarioService(UsuarioRepository usuarioRepository,
+                         com.desarrolloweb.DeliveryApp.repository.RolRepository rolRepository){
         this.usuarioRepository = usuarioRepository;
+        this.rolRepository = rolRepository;
     }
 
     public UsuarioResponseDto crear(UsuarioRequestDto request){
         if (usuarioRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("El email ya está registrado");
+            throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.CONFLICT, "El email ya está registrado");
         }
 
         Usuario usuario = new Usuario();
@@ -32,8 +35,10 @@ public class UsuarioService {
         usuario.setTelefono(request.getTelefono());
         usuario.setEmail(request.getEmail());
         usuario.setPassword(passwordEncoder.encode(request.getPassword()));
-        usuario.setFechaRegistro(request.getFechaRegistro().atStartOfDay());
+        usuario.setFechaRegistro((request.getFechaRegistro() == null ? java.time.LocalDateTime.now() : request.getFechaRegistro().atStartOfDay()));
 
+        usuario.getRoles().add(rolRepository.findByNombreIgnoreCase("CLIENTE")
+                .orElseThrow(() -> new IllegalStateException("Falta migracion de rol CLIENTE")));
         Usuario guardado = usuarioRepository.save(usuario);
 
         return new UsuarioResponseDto(
@@ -46,7 +51,7 @@ public class UsuarioService {
         );
     }
     public UsuarioResponseDto buscarPorId(Long id){
-        Usuario usuario = usuarioRepository.findById(id).orElseThrow(()->new RuntimeException("Usuario no encontrado"));
+        Usuario usuario = usuarioRepository.findById(id).orElseThrow(()->new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND, "Usuario no encontrado"));
         return new UsuarioResponseDto(
             usuario.getId(),
             usuario.getNombre(),
@@ -59,9 +64,6 @@ public class UsuarioService {
     public List<UsuarioResponseDto> listarTodos(){
     List<Usuario> usuarios = usuarioRepository.findAll();
 
-    if (usuarios.isEmpty()) {
-        throw new RuntimeException("No hay usuarios registrados");
-    }
 
     List<UsuarioResponseDto> resultado = new ArrayList<>();
 
@@ -79,10 +81,10 @@ public class UsuarioService {
     return resultado;
 }
 public UsuarioResponseDto actualizar(Long id, UsuarioRequestDto request){
-    Usuario usuario = usuarioRepository.findById(id).orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+    Usuario usuario = usuarioRepository.findById(id).orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND, "Usuario no encontrado"));
 
     if (!usuario.getEmail().equals(request.getEmail()) && usuarioRepository.existsByEmail(request.getEmail())) {
-        throw new RuntimeException("El email ya está registrado");
+        throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.CONFLICT, "El email ya está registrado");
     }
     
     usuario.setNombre(request.getNombre());
@@ -90,7 +92,7 @@ public UsuarioResponseDto actualizar(Long id, UsuarioRequestDto request){
     usuario.setTelefono(request.getTelefono());
     usuario.setEmail(request.getEmail());
     usuario.setPassword(passwordEncoder.encode(request.getPassword()));
-    usuario.setFechaRegistro(request.getFechaRegistro().atStartOfDay());
+    usuario.setFechaRegistro((request.getFechaRegistro() == null ? java.time.LocalDateTime.now() : request.getFechaRegistro().atStartOfDay()));
 
     Usuario actualizado = usuarioRepository.save(usuario);
 
@@ -104,7 +106,7 @@ public UsuarioResponseDto actualizar(Long id, UsuarioRequestDto request){
     );
 }
 public void eliminar(Long id){
-    Usuario usuario = usuarioRepository.findById(id).orElseThrow(()-> new RuntimeException("Usuario no encontrado"));
+    Usuario usuario = usuarioRepository.findById(id).orElseThrow(()-> new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND, "Usuario no encontrado"));
     usuarioRepository.delete(usuario);
 }
 }

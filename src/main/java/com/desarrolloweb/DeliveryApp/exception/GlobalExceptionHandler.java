@@ -51,6 +51,14 @@ public class GlobalExceptionHandler {
                 "Solicitud duplicada o datos incompatibles. Comprueba si el envio ya se creo."));
     }
 
+    // Spring Security method-level authorization exceptions must not be flattened into HTTP 500.
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public ResponseEntity<ErrorResponseDTO> handleAccessDenied(
+            org.springframework.security.access.AccessDeniedException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErrorResponseDTO(
+                LocalDateTime.now(), HttpStatus.FORBIDDEN.value(), "Forbidden", "Acceso denegado"));
+    }
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ErrorResponseDTO> handleNotFound(RuntimeException ex) {
         if (ex.getMessage() != null && ex.getMessage().contains("No se encontró")) {

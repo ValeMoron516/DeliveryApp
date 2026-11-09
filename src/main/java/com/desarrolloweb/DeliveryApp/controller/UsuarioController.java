@@ -2,6 +2,7 @@ package com.desarrolloweb.DeliveryApp.controller;
 
 import java.util.List;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,6 +13,7 @@ import com.desarrolloweb.DeliveryApp.dto.UsuarioResponseDto;
 import com.desarrolloweb.DeliveryApp.service.UsuarioService;
 
 @RestController
+@PreAuthorize("hasRole('ADMIN')")
 @RequestMapping("/api/v1/usuarios")
 public class UsuarioController {
 
@@ -35,12 +37,14 @@ public class UsuarioController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("@deliveryAccess.userOrAdmin(#id)")
     public ResponseEntity<UsuarioResponseDto> buscarPorId(@PathVariable Long id) {
         UsuarioResponseDto usuario = usuarioService.buscarPorId(id);
         return new ResponseEntity<>(usuario, HttpStatus.OK);
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("@deliveryAccess.userOrAdmin(#id)")
     public ResponseEntity<UsuarioResponseDto> actualizar(@PathVariable Long id,
             @RequestBody UsuarioRequestDto request) {
         UsuarioResponseDto actualizado = usuarioService.actualizar(id, request);

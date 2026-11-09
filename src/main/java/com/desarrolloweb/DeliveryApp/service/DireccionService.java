@@ -23,7 +23,7 @@ public class DireccionService {
     }
     public DireccionResponseDto crear(Long usuarioId, DireccionRequestDto request){
     Usuario usuario = usuarioRepository.findById(usuarioId)
-        .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND, "Usuario no encontrado"));
 
         Direccion direccion = new Direccion();
         direccion.setUsuario(usuario);
@@ -48,9 +48,6 @@ return new DireccionResponseDto(
 public List<DireccionResponseDto> listarPorUsuario(Long usuarioId){
     List<Direccion> direcciones = direccionRepository.findByUsuarioId(usuarioId);
 
-    if (direcciones.isEmpty()) {
-        throw new RuntimeException("El usuario no tiene direcciones");
-    }
 
     List<DireccionResponseDto> resultado = new ArrayList<>();
 
@@ -70,7 +67,7 @@ public List<DireccionResponseDto> listarPorUsuario(Long usuarioId){
 }
 public DireccionResponseDto buscarPorId(Long usuarioId, Long direccionId){
     Direccion direccion = direccionRepository.findByIdAndUsuarioId(direccionId, usuarioId)
-        .orElseThrow(() -> new RuntimeException("Direccion no encontrada"));
+        .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND, "Direccion no encontrada"));
 
     return new DireccionResponseDto(
         direccion.getId(),
@@ -85,7 +82,7 @@ public DireccionResponseDto buscarPorId(Long usuarioId, Long direccionId){
 }
 public DireccionResponseDto actualizar(Long usuarioId, Long direccionId, DireccionRequestDto request){
     Direccion direccion = direccionRepository.findByIdAndUsuarioId(direccionId, usuarioId)
-        .orElseThrow(() -> new RuntimeException("Direccion no encontrada"));
+        .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND, "Direccion no encontrada"));
 
     direccion.setCalle(request.getCalle());
     direccion.setNumero(request.getNumero());
@@ -107,7 +104,7 @@ public DireccionResponseDto actualizar(Long usuarioId, Long direccionId, Direcci
 }
 public void eliminar(Long usuarioId, Long direccionId){
     Direccion direccion = direccionRepository.findByIdAndUsuarioId(direccionId, usuarioId)
-        .orElseThrow(() -> new RuntimeException("Direccion no encontrada"));
+        .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND, "Direccion no encontrada"));
     direccionRepository.delete(direccion);
 }
 }
