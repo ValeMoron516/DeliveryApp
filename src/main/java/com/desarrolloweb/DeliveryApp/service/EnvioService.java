@@ -101,10 +101,30 @@ public class EnvioService {
                         e.getCostoEnvio())).toList();
     }
 
+    private static boolean esBorrador(Envio e) {
+        return e.getEstado()==EstadoEnvio.ESPERANDO_DATOS || e.getEstado()==EstadoEnvio.LISTO_PARA_COTIZAR;
+    }
+
+    /** Promueve la misma fila de envios, sin generar un segundo envío ni otra tabla. */
+    @Transactional
+    public EnvioResponseDTO activarBorrador(Envio e,Long tarifaId,BigDecimal precio) {
+        if(e.getEstado()!=EstadoEnvio.LISTO_PARA_COTIZAR)
+            throw new EnvioConflictException("Solicitud aún no está lista");
+        e.setTarifaCalculadaId(tarifaId);
+        e.setCostoEnvio(precio);
+        e.setEstado(EstadoEnvio.BUSCANDO_REPARTIDOR);
+        e.setAsignacionAutomatica(true);
+        e.setTokenCompartirHash(null);
+        e.setTokenCompartirExpira(null);
+        envioRepository.saveAndFlush(e);
+        registrarAvance(e,EstadoEnvio.BUSCANDO_REPARTIDOR,LocalDateTime.now());
+        return intentarAsignacionAutomatica(e.getIdEnvio());
+    }
+
     @Transactional(readOnly = true)
     public List<EnvioResponseDTO> listarEnviosCliente(Long clienteId) {
         return envioRepository.findByClienteIdOrderByIdEnvioDesc(clienteId)
-                .stream().map(e -> mapearAResponseDTO(e, null)).toList();
+                .stream().filter(e -> !esBorrador(e)).map(e -> mapearAResponseDTO(e, null)).toList();
     }
 
     @Transactional(readOnly = true)
@@ -116,13 +136,14 @@ public class EnvioService {
     @Transactional(readOnly = true)
     public List<EnvioResponseDTO> listarEnvios() {
         return envioRepository.findAll().stream()
-                .map(e -> mapearAResponseDTO(e, null)).toList();
+                .filter(e -> !esBorrador(e)).map(e -> mapearAResponseDTO(e, null)).toList();
     }
 
     @Transactional(readOnly = true)
     public EnvioResponseDTO obtenerEnvioPorId(Long id) {
         Envio envio = envioRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Envio no encontrado: " + id));
+        if (esBorrador(envio)) throw new NotFoundException("Envio no confirmado");
         return mapearAResponseDTO(envio, null);
     }
 
@@ -349,6 +370,8 @@ public class EnvioService {
 
     private String tituloEtapa(EstadoEnvio etapa) {
         return switch (etapa) {
+            case ESPERANDO_DATOS -> "Datos pendientes";
+            case LISTO_PARA_COTIZAR -> "Pendiente de cotizacion";
             case BUSCANDO_REPARTIDOR -> "Envio solicitado";
             case REPARTIDOR_ASIGNADO -> "Repartidor asignado";
             case EN_ORIGEN -> "Repartidor en el origen";
@@ -360,6 +383,8 @@ public class EnvioService {
 
     private String mensajeEtapa(EstadoEnvio etapa) {
         return switch (etapa) {
+            case ESPERANDO_DATOS -> "Faltan datos del paquete";
+            case LISTO_PARA_COTIZAR -> "Datos preparados para cotizar";
             case BUSCANDO_REPARTIDOR -> "Se registro la solicitud de envio";
             case REPARTIDOR_ASIGNADO -> "Un repartidor acepto el envio";
             case EN_ORIGEN -> "El repartidor llego al punto de retiro";

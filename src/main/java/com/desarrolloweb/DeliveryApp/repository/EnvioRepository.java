@@ -20,6 +20,11 @@ public interface EnvioRepository extends JpaRepository<Envio, Long> {
             Long repartidorId, Collection<EstadoEnvio> estados);
 
     Optional<Envio> findByClaveSolicitud(String claveSolicitud);
+    List<Envio> findByClienteIdAndEstadoInOrderByIdEnvioDesc(Long clienteId, Collection<EstadoEnvio> estados);
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select e from Envio e where e.tokenCompartirHash = :hash")
+    Optional<Envio> buscarPorTokenBloqueado(@Param("hash") String hash);
+
     boolean existsByTarifaCalculadaId(Long tarifaCalculadaId);
     List<Envio> findByEstadoAndAsignacionAutomaticaTrueOrderByFechaSolicitudAsc(EstadoEnvio estado);
     boolean existsByRepartidorId(Long repartidorId);

@@ -60,6 +60,21 @@ public class Envio {
     @Column(name = "observaciones_entrega", length = 255)
     private String observacionesEntrega;
 
+    // Preparación del envío dentro de envios, sin tabla adicional.
+    @Column(name = "tipo_operacion", length = 10)
+    private String tipoOperacion;
+    @Column(name = "token_compartir_hash", length = 64)
+    private String tokenCompartirHash;
+    @Column(name = "token_compartir_expira")
+    private LocalDateTime tokenCompartirExpira;
+
+    public String getTipoOperacion() { return tipoOperacion; }
+    public void setTipoOperacion(String v) { this.tipoOperacion = v; }
+    public String getTokenCompartirHash() { return tokenCompartirHash; }
+    public void setTokenCompartirHash(String v) { this.tokenCompartirHash = v; }
+    public LocalDateTime getTokenCompartirExpira() { return tokenCompartirExpira; }
+    public void setTokenCompartirExpira(LocalDateTime v) { this.tokenCompartirExpira = v; }
+
     public Envio() {}
 
     // Getters y Setters
