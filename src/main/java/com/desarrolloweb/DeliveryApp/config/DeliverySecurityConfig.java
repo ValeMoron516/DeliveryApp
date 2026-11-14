@@ -60,13 +60,15 @@ public class DeliverySecurityConfig {
             .authorizeHttpRequests(a -> a
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers("/api/v1/auth/registro", "/api/v1/auth/login").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/paquetes-compartidos/*").permitAll()
+                .requestMatchers(HttpMethod.PUT, "/api/v1/paquetes-compartidos/*").permitAll()
                 .requestMatchers("/error").permitAll()
                 .anyRequest().authenticated())
             .oauth2ResourceServer(o -> o.jwt(j -> j.jwtAuthenticationConverter(converter)));
         return http.build();
     }
     @Bean CorsConfigurationSource corsConfigurationSource(
-            @Value("${delivery.cors.origins:http://localhost:4321,http://127.0.0.1:4321}") String origins) {
+            @Value("${delivery.cors.origins:http://localhost:4200,http://127.0.0.1:4200,http://localhost:4321,http://127.0.0.1:4321}") String origins) {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(List.of(origins.split(",")));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
