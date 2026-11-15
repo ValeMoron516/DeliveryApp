@@ -23,6 +23,8 @@ public class DeliveryAuthService {
     private final UsuarioRepository usuarios;
     private final RolRepository roles;
     private final JwtEncoder encoder;
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.desarrolloweb.DeliveryApp.repository.RepartidorRepository perfiles;
     private final BCryptPasswordEncoder bcrypt = new BCryptPasswordEncoder();
     public DeliveryAuthService(UsuarioRepository usuarios, RolRepository roles, JwtEncoder encoder) {
         this.usuarios = usuarios; this.roles = roles; this.encoder = encoder;
@@ -66,6 +68,8 @@ public class DeliveryAuthService {
     @Transactional
     public void habilitarRepartidor(Long id) {
         Usuario u = usuarios.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        if (perfiles == null || !perfiles.existsById(id))
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "El usuario debe solicitar el alta primero");
         Roles repartidor = roles.findByNombreIgnoreCase("REPARTIDOR")
                 .orElseThrow(() -> new IllegalStateException("Falta rol REPARTIDOR"));
         u.getRoles().add(repartidor);

@@ -29,13 +29,15 @@ public class RepartidorService {
     private static final Set<EstadoEnvio> ESTADOS_ACTIVOS = Set.of(
             EstadoEnvio.REPARTIDOR_ASIGNADO,
             EstadoEnvio.EN_ORIGEN,
-            EstadoEnvio.EN_CAMINO);
+            EstadoEnvio.EN_CAMINO, EstadoEnvio.INCIDENCIA);
 
 
     private final RepartidorRepository repartidorRepository;
     private final UsuarioRepository usuarioRepository;
     private final EnvioRepository envioRepository;
     private final VehiculoRepository vehiculoRepository;
+    @org.springframework.beans.factory.annotation.Autowired
+    private RepartidorPresenciaService presencia;
 
     public RepartidorService(RepartidorRepository repartidorRepository,
                              UsuarioRepository usuarioRepository,
@@ -52,13 +54,13 @@ public class RepartidorService {
     private RepartidorResponseDTO mapearRepartidor(Repartidor repartidor) {
         boolean ocupado = envioRepository.existsByRepartidorIdAndEstadoIn(
                 repartidor.getIdRepartidor(), ESTADOS_ACTIVOS);
-        boolean puedeRecibirEnvios = Integer.valueOf(1).equals(repartidor.getDisponible())
+        boolean puedeRecibirEnvios = presencia != null && presencia.activo(repartidor.getIdRepartidor())
                 && !ocupado && repartidor.getVehiculoActId() != null;
 
         RepartidorResponseDTO respuesta = new RepartidorResponseDTO(
                 repartidor.getIdRepartidor(),
                 repartidor.getFotoUrl(),
-                repartidor.getDisponible(),
+                puedeRecibirEnvios ? 1 : 0,
                 repartidor.getSaldoAcumulado(),
                 repartidor.getCalificacionPromedio(),
                 repartidor.getTasaRechazoInterna(),
@@ -123,16 +125,13 @@ public class RepartidorService {
         Repartidor repartidor = repartidorRepository.buscarParaAsignar(idRepartidor)
                 .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Repartidor no encontrado"));
-        validarDisponibilidad(idRepartidor, updateDTO.getDisponible());
+        // La disponibilidad la calcula el sistema; PUT no puede activarla.
         if (!Objects.equals(repartidor.getVehiculoActId(), updateDTO.getVehiculoActId())) {
             impedirCambioVehiculoEnCurso(idRepartidor);
             validarVehiculoExistente(updateDTO.getVehiculoActId());
         }
-        if (updateDTO.getDisponible() == 1 && updateDTO.getVehiculoActId() == null) {
-            throw new EnvioConflictException("No puede estar disponible sin vehiculo activo");
-        }
         repartidor.setFotoUrl(updateDTO.getFotoUrl());
-        repartidor.setDisponible(updateDTO.getDisponible());
+
         repartidor.setVehiculoActId(updateDTO.getVehiculoActId());
 
         Repartidor repartidorActualizado = repartidorRepository.save(repartidor);
@@ -151,23 +150,36 @@ public class RepartidorService {
         repartidorRepository.deleteById(idRepartidor);
     }
     
-    // Cambiar disponibilidad (Método PATCH)
+    // Endpoint antiguo: no se permite activar manualmente la disponibilidad.
+    public RepartidorResponseDTO actualizarDisponibilidad(Long idRepartidor, DisponibilidadDTO dto) {
+        throw new ResponseStatusException(HttpStatus.CONFLICT,
+                "La disponibilidad es automatica: ingresá al panel de repartidor");
+    }
+
+    @Transactional(readOnly = true)
+    public RepartidorResponseDTO registrarPresencia(Long idRepartidor) {
+        Repartidor perfil = repartidorRepository.findById(idRepartidor)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Perfil no encontrado"));
+        boolean habilitado = usuarioRepository.findById(idRepartidor)
+                .map(u -> u.getRoles().stream().anyMatch(r -> "REPARTIDOR".equalsIgnoreCase(r.getNombre())))
+                .orElse(false);
+        if (!habilitado) throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Pendiente de aprobacion");
+        if (presencia == null) throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+        presencia.registrar(idRepartidor);
+        return mapearRepartidor(perfil);
+    }
+    public void salirDelModoRepartidor(Long idRepartidor) {
+        if (presencia != null) presencia.salir(idRepartidor);
+    }
+
+    /** CLIENTE solicita un perfil pendiente de aprobacion; no se otorga ROLE_REPARTIDOR. */
     @Transactional
-    public RepartidorResponseDTO actualizarDisponibilidad(Long idRepartidor, DisponibilidadDTO disponibilidadDTO) {
-        Repartidor repartidor = repartidorRepository.buscarParaAsignar(idRepartidor)
-                .orElseThrow(() -> new RuntimeException("No se encontró el repartidor con ID: " + idRepartidor));
-
-        if (disponibilidadDTO == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Datos obligatorios");
-        }
-        validarDisponibilidad(idRepartidor, disponibilidadDTO.getDisponible());
-        if (disponibilidadDTO.getDisponible() == 1 && repartidor.getVehiculoActId() == null) {
-            throw new EnvioConflictException("No puede estar disponible sin vehiculo activo");
-        }
-        repartidor.setDisponible(disponibilidadDTO.getDisponible());
-        Repartidor actualizado = repartidorRepository.save(repartidor);
-
-        return mapearRepartidor(actualizado);
+    public RepartidorResponseDTO solicitarAlta(Long usuarioId) {
+        if (repartidorRepository.existsById(usuarioId))
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Ya existe una solicitud o perfil");
+        RepartidorCreateDTO dto = new RepartidorCreateDTO();
+        dto.setUsuarioId(usuarioId);
+        return registrarRepartidor(dto);
     }
 
     // Cambiar vehículo activo (Método PATCH)
@@ -190,7 +202,7 @@ public class RepartidorService {
 
     private void impedirCambioVehiculoEnCurso(Long idRepartidor) {
         if (envioRepository.existsByRepartidorIdAndEstadoIn(idRepartidor,
-                Set.of(EstadoEnvio.REPARTIDOR_ASIGNADO, EstadoEnvio.EN_ORIGEN, EstadoEnvio.EN_CAMINO))) {
+                Set.of(EstadoEnvio.REPARTIDOR_ASIGNADO, EstadoEnvio.EN_ORIGEN, EstadoEnvio.EN_CAMINO, EstadoEnvio.INCIDENCIA))) {
             throw new EnvioConflictException("No se puede cambiar el vehiculo durante un envio activo");
         }
     }
@@ -206,7 +218,7 @@ public class RepartidorService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Disponible debe ser 0 o 1");
         }
         if (disponible == 1 && envioRepository.existsByRepartidorIdAndEstadoIn(idRepartidor,
-                List.of(EstadoEnvio.REPARTIDOR_ASIGNADO, EstadoEnvio.EN_ORIGEN, EstadoEnvio.EN_CAMINO))) {
+                List.of(EstadoEnvio.REPARTIDOR_ASIGNADO, EstadoEnvio.EN_ORIGEN, EstadoEnvio.EN_CAMINO, EstadoEnvio.INCIDENCIA))) {
             throw new EnvioConflictException("No puede marcarse disponible con un envio activo");
         }
     }

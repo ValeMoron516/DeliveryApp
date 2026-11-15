@@ -7,6 +7,7 @@ public enum EstadoEnvio {
     REPARTIDOR_ASIGNADO,
     EN_ORIGEN,
     EN_CAMINO,
+    INCIDENCIA,
     ENTREGADO,
     CANCELADO
 }

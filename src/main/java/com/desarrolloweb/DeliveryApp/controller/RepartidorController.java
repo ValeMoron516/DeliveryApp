@@ -24,6 +24,28 @@ public class RepartidorController {
         this.repartidorService = repartidorService;
     }
 
+    // Solicitud publica para un cliente autenticado; requiere aprobacion ADMIN.
+    @PostMapping("/solicitar-alta")
+    @PreAuthorize("hasRole('CLIENTE')")
+    public ResponseEntity<RepartidorResponseDTO> solicitarAlta(
+            @org.springframework.security.core.annotation.AuthenticationPrincipal org.springframework.security.oauth2.jwt.Jwt jwt) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(
+                repartidorService.solicitarAlta(Long.valueOf(jwt.getSubject())));
+    }
+
+    @PostMapping("/{id}/presencia")
+    @PreAuthorize("@deliveryAccess.courier(#id)")
+    public RepartidorResponseDTO presencia(@PathVariable Long id) {
+        return repartidorService.registrarPresencia(id);
+    }
+
+    @PostMapping("/{id}/salir")
+    @PreAuthorize("@deliveryAccess.courier(#id)")
+    public ResponseEntity<Void> salir(@PathVariable Long id) {
+        repartidorService.salirDelModoRepartidor(id);
+        return ResponseEntity.noContent().build();
+    }
+
     // 1. POST: Registrar nuevo repartidor
     @PostMapping
     public ResponseEntity<RepartidorResponseDTO> registrarRepartidor(@RequestBody RepartidorCreateDTO createDTO) {

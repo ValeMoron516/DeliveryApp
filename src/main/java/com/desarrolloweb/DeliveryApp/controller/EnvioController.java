@@ -15,6 +15,8 @@ import com.desarrolloweb.DeliveryApp.service.EnvioService;
 public class EnvioController {
 
     private final EnvioService envioService;
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.desarrolloweb.DeliveryApp.service.RepartidorPresenciaService presencia;
     private final com.desarrolloweb.DeliveryApp.service.DeliveryAccess deliveryAccess;
     private final com.desarrolloweb.DeliveryApp.service.ServicioCotizacionAutomatica cotizacionAutomatica;
 
@@ -50,7 +52,10 @@ public class EnvioController {
     // Repartidores: ofertas en espera. Sin datos privados hasta aceptar.
     @GetMapping("/disponibles")
     @PreAuthorize("hasRole('REPARTIDOR')")
-    public List<OfertaEnvioDTO> disponibles() { return envioService.listarOfertas(); }
+    public List<OfertaEnvioDTO> disponibles() {
+        if (!presencia.activo(deliveryAccess.currentUserId())) return List.of();
+        return envioService.listarOfertasPara(deliveryAccess.currentUserId());
+    }
 
     // Aceptar como el repartidor del JWT; evita IDs de repartidor elegidos por el navegador.
     @PatchMapping("/{id}/aceptar")
@@ -60,6 +65,25 @@ public class EnvioController {
         dto.setRepartidorId(deliveryAccess.currentUserId());
         return envioService.asignarRepartidor(id, dto);
     }
+
+    @PatchMapping("/{id}/incidencia")
+    @PreAuthorize("hasRole('REPARTIDOR')")
+    public EnvioResponseDTO incidencia(@PathVariable Long id, @RequestBody MotivoDesistimiento dto) {
+        return envioService.reportarIncidencia(id, deliveryAccess.currentUserId(), dto.motivo());
+    }
+
+    @PatchMapping("/{id}/resolver-incidencia")
+    public EnvioResponseDTO resolverIncidencia(@PathVariable Long id, @RequestBody ResolucionIncidencia dto) {
+        return envioService.resolverIncidencia(id, dto.paqueteDevuelto());
+    }
+    public record ResolucionIncidencia(boolean paqueteDevuelto) { }
+
+    @PatchMapping("/{id}/desistir")
+    @PreAuthorize("hasRole('REPARTIDOR')")
+    public EnvioResponseDTO desistir(@PathVariable Long id, @RequestBody MotivoDesistimiento dto) {
+        return envioService.desistirRepartidor(id, deliveryAccess.currentUserId(), dto.motivo());
+    }
+    public record MotivoDesistimiento(String motivo) { }
 
     // Listar todos los envíos (GET /api/v1/envios)
     @GetMapping
@@ -101,7 +125,8 @@ public class EnvioController {
     // 5. Asignar un Repartidor al envío (PATCH /api/v1/envios/{id}/asignar)
     @PatchMapping("/{id}/asignar")
     public EnvioResponseDTO asignarRepartidor(@PathVariable Long id, @RequestBody AsignarRepartidorRequestDTO dto) {
-        return envioService.asignarRepartidor(id, dto);
+        throw new org.springframework.web.server.ResponseStatusException(
+            HttpStatus.CONFLICT, "La asignacion requiere aceptacion voluntaria del repartidor");
     }
 
     // 6. Actualizar el estado del flujo de envío (PATCH /api/v1/envios/{id}/estado)

@@ -27,6 +27,8 @@ public class EnvioService {
     private final DireccionRepository direccionRepository;
     private final RegistroEtapaDeliveryRepository registroRepository;
     private final NotificacionDeliveryRepository notificacionRepository;
+    @org.springframework.beans.factory.annotation.Autowired
+    private RepartidorPresenciaService presencia;
 
     public EnvioService(EnvioRepository envioRepository,
                         TarifaCalculadaRepository tarifaRepository,
@@ -99,6 +101,21 @@ public class EnvioService {
                 .map(e -> new OfertaEnvioDTO(e.getIdEnvio(),
                         obtenerTarifa(e.getTarifaCalculadaId()).getTipoVehiculo(),
                         e.getCostoEnvio())).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<OfertaEnvioDTO> listarOfertasPara(Long repartidorId) {
+        if (presencia == null || !presencia.activo(repartidorId)) return List.of();
+        Repartidor r = repartidorRepository.findById(repartidorId).orElse(null);
+        if (r == null || r.getVehiculoActId() == null ||
+                envioRepository.existsByRepartidorIdAndEstadoIn(repartidorId,
+                        Set.of(EstadoEnvio.REPARTIDOR_ASIGNADO, EstadoEnvio.EN_ORIGEN,
+                               EstadoEnvio.EN_CAMINO, EstadoEnvio.INCIDENCIA))) return List.of();
+        Vehiculo v = vehiculoRepository.findById(r.getVehiculoActId()).orElse(null);
+        if (v == null) return List.of();
+        return listarOfertas().stream()
+                .filter(o -> CotizadorTarifa.mismoTipo(o.tipoVehiculo(), v.getTipo()))
+                .toList();
     }
 
     private static boolean esBorrador(Envio e) {
@@ -192,11 +209,14 @@ public class EnvioService {
         // El bloqueo del repartidor serializa asignaciones concurrentes a distintos envios.
         Repartidor repartidor = repartidorRepository.buscarParaAsignar(dto.getRepartidorId())
                 .orElseThrow(() -> new NotFoundException("Repartidor no encontrado"));
-        if (!Integer.valueOf(1).equals(repartidor.getDisponible())) {
+        boolean habilitado = usuarioRepository.findById(repartidor.getIdRepartidor())
+                .map(u -> u.getRoles().stream().anyMatch(r -> "REPARTIDOR".equalsIgnoreCase(r.getNombre())))
+                .orElse(false);
+        if (!habilitado || presencia == null || !presencia.activo(repartidor.getIdRepartidor())) {
             throw new EnvioConflictException("El repartidor no esta disponible");
         }
         if (envioRepository.existsByRepartidorIdAndEstadoIn(repartidor.getIdRepartidor(),
-                Set.of(EstadoEnvio.REPARTIDOR_ASIGNADO, EstadoEnvio.EN_ORIGEN, EstadoEnvio.EN_CAMINO))) {
+                Set.of(EstadoEnvio.REPARTIDOR_ASIGNADO, EstadoEnvio.EN_ORIGEN, EstadoEnvio.EN_CAMINO, EstadoEnvio.INCIDENCIA))) {
             throw new EnvioConflictException("El repartidor tiene un envio en curso");
         }
         // Una cotizacion para bicicleta no puede cumplirse con una moto (ni viceversa).
@@ -221,44 +241,65 @@ public class EnvioService {
         return mapearAResponseDTO(guardado, "Repartidor asignado con exito");
     }
 
-    /** Busca un repartidor compatible automaticamente, sin cambiar la tarifa aceptada.
-     *  Se usa al crear la solicitud y desde el reintento programado.
+    /** Ninguna asignacion se convierte en definitiva sin aceptacion del repartidor.
+     * Se mantiene la firma para preservar llamadas existentes sin generar asignaciones.
      */
-    @Transactional
+    @Transactional(readOnly = true)
     public EnvioResponseDTO intentarAsignacionAutomatica(Long id) {
+        Envio envio = envioRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Envio no encontrado"));
+        return mapearAResponseDTO(envio, "Esperando aceptacion voluntaria de una oferta");
+    }
+
+    @Transactional
+    public EnvioResponseDTO desistirRepartidor(Long id, Long repartidorId, String motivo) {
+        if (motivo == null || motivo.isBlank() || motivo.trim().length() > 180)
+            throw new EnvioBadRequestException("Indica un motivo de 1 a 180 caracteres");
         Envio envio = obtenerBloqueado(id);
-        if (!Boolean.TRUE.equals(envio.getAsignacionAutomatica())
-                || envio.getEstado() != EstadoEnvio.BUSCANDO_REPARTIDOR
-                || envio.getRepartidorId() != null) {
-            return mapearAResponseDTO(envio, null);
-        }
-        TarifaCalculada tarifa = obtenerTarifa(envio.getTarifaCalculadaId());
-        List<Repartidor> candidatos = new java.util.ArrayList<>(repartidorRepository.findByDisponible(1));
-        candidatos.sort(Comparator.comparing(Repartidor::getIdRepartidor));
-        for (Repartidor previo : candidatos) {
-            // Bloqueo pesimista: dos envios simultaneos no toman el mismo repartidor.
-            Repartidor repartidor = repartidorRepository.buscarParaAsignar(previo.getIdRepartidor())
-                    .orElse(null);
-            if (repartidor == null || !Integer.valueOf(1).equals(repartidor.getDisponible())
-                    || repartidor.getVehiculoActId() == null) {
-                continue;
-            }
-            Vehiculo vehiculo = vehiculoRepository.findById(repartidor.getVehiculoActId()).orElse(null);
-            if (vehiculo == null || !CotizadorTarifa.mismoTipo(
-                    vehiculo.getTipo(), tarifa.getTipoVehiculo())) {
-                continue;
-            }
-            if (envioRepository.existsByRepartidorIdAndEstadoIn(repartidor.getIdRepartidor(),
-                    Set.of(EstadoEnvio.REPARTIDOR_ASIGNADO, EstadoEnvio.EN_ORIGEN, EstadoEnvio.EN_CAMINO))) {
-                continue;
-            }
-            envio.setRepartidorId(repartidor.getIdRepartidor());
-            envio.setEstado(EstadoEnvio.REPARTIDOR_ASIGNADO);
+        if (!repartidorId.equals(envio.getRepartidorId()))
+            throw new EnvioConflictException("El envio no esta asignado a este repartidor");
+        if (envio.getEstado() != EstadoEnvio.REPARTIDOR_ASIGNADO && envio.getEstado() != EstadoEnvio.EN_ORIGEN)
+            throw new EnvioConflictException("Paquete retirado: requiere incidencia administrativa; no puede desistir");
+        // El campo existente conserva la razon sin agregar una tabla nueva.
+        envio.setObservacionesEntrega("Desistimiento previo al retiro: " + motivo.trim());
+        envio.setRepartidorId(null);
+        envio.setEstado(EstadoEnvio.BUSCANDO_REPARTIDOR);
+        Envio guardado = envioRepository.save(envio);
+        // BUSCANDO_REPARTIDOR ya se registro al crear el envio y su etapa es unica.
+        // No crear una segunda fila en registro_etapa_delivery para el mismo estado.
+        return mapearAResponseDTO(guardado, "La oferta vuelve a estar disponible");
+    }
+
+    /** El paquete ya fue retirado: solo es posible abrir una incidencia. */
+    @Transactional
+    public EnvioResponseDTO reportarIncidencia(Long id, Long repartidorId, String motivo) {
+        if (motivo == null || motivo.isBlank() || motivo.trim().length() > 180)
+            throw new EnvioBadRequestException("Indica un motivo de 1 a 180 caracteres");
+        Envio envio = obtenerBloqueado(id);
+        if (!repartidorId.equals(envio.getRepartidorId()) || envio.getEstado() != EstadoEnvio.EN_CAMINO)
+            throw new EnvioConflictException("Solo el repartidor con paquete retirado puede reportar la incidencia");
+        envio.setObservacionesEntrega("Incidencia: " + motivo.trim());
+        envio.setEstado(EstadoEnvio.INCIDENCIA);
+        Envio guardado = envioRepository.save(envio);
+        registrarAvance(guardado, EstadoEnvio.INCIDENCIA, LocalDateTime.now());
+        return mapearAResponseDTO(guardado, "Incidencia informada; el repartidor sigue ocupado");
+    }
+
+    @Transactional
+    public EnvioResponseDTO resolverIncidencia(Long id, boolean devuelto) {
+        Envio envio = obtenerBloqueado(id);
+        if (envio.getEstado() != EstadoEnvio.INCIDENCIA)
+            throw new EnvioConflictException("Este envio no tiene incidencia pendiente");
+        if (devuelto) {
+            envio.setEstado(EstadoEnvio.CANCELADO);
+            // No se permite cancelar sin afirmacion de devolucion del paquete.
             Envio guardado = envioRepository.save(envio);
-            registrarAvance(guardado, EstadoEnvio.REPARTIDOR_ASIGNADO, LocalDateTime.now());
-            return mapearAResponseDTO(guardado, "Repartidor compatible asignado automaticamente");
+            registrarAvance(guardado, EstadoEnvio.CANCELADO, LocalDateTime.now());
+            return mapearAResponseDTO(guardado, "Administracion confirmo la devolucion y cancelacion");
         }
-        return mapearAResponseDTO(envio, "Sin repartidores compatibles; solicitud en espera, mismo precio");
+        envio.setEstado(EstadoEnvio.EN_CAMINO);
+        // La etapa EN_CAMINO ya consta en el historial previo a la incidencia.
+        return mapearAResponseDTO(envioRepository.save(envio), "Repartidor habilitado para continuar la entrega");
     }
 
     @Transactional
@@ -351,12 +392,13 @@ public class EnvioService {
         if (envio.getIdEnvio() == null) {
             throw new IllegalStateException("El envio debe guardarse antes de registrar su historial");
         }
-        if (registroRepository.existsByEnvioIdAndEtapaAlcanzada(envio.getIdEnvio(), etapa.name())) {
-            throw new EnvioConflictException("La etapa ya existe en el historial: " + etapa);
+        // Reofertas pueden repetir etapas; la BD solo admite una fila por envio+etapa.
+        // Conservamos la primera y enviamos igualmente una notificacion en reintentos.
+        if (!registroRepository.existsByEnvioIdAndEtapaAlcanzada(envio.getIdEnvio(), etapa.name())) {
+            RegistroEtapaDelivery registro = new RegistroEtapaDelivery(envio.getIdEnvio(), etapa.name(), true);
+            registro.setFechaHora(momento);
+            registroRepository.save(registro);
         }
-        RegistroEtapaDelivery registro = new RegistroEtapaDelivery(envio.getIdEnvio(), etapa.name(), true);
-        registro.setFechaHora(momento);
-        registroRepository.save(registro);
 
         // Aviso de bandeja interna. No envia SMS, correo ni push real.
         int envioId = Math.toIntExact(envio.getIdEnvio());
@@ -376,6 +418,7 @@ public class EnvioService {
             case REPARTIDOR_ASIGNADO -> "Repartidor asignado";
             case EN_ORIGEN -> "Repartidor en el origen";
             case EN_CAMINO -> "Paquete en camino";
+            case INCIDENCIA -> "Incidencia reportada";
             case ENTREGADO -> "Entrega confirmada";
             case CANCELADO -> "Envio cancelado";
         };
@@ -389,6 +432,7 @@ public class EnvioService {
             case REPARTIDOR_ASIGNADO -> "Un repartidor acepto el envio";
             case EN_ORIGEN -> "El repartidor llego al punto de retiro";
             case EN_CAMINO -> "El paquete fue retirado y se dirige a destino";
+            case INCIDENCIA -> "El repartidor informo una incidencia; requiere administracion";
             case ENTREGADO -> "La recepcion fue registrada";
             case CANCELADO -> "La solicitud de envio fue cancelada";
         };
