@@ -93,11 +93,10 @@ public class EnvioController {
 
     // Los resultados siempre se derivan del usuario autenticado, nunca de un ID del navegador.
     @GetMapping("/mios")
-    @PreAuthorize("hasAnyRole('CLIENTE','REPARTIDOR','ADMIN')")
+    @PreAuthorize("hasAnyRole('CLIENTE','ADMIN')")
     public List<EnvioResponseDTO> mios() {
-        if (deliveryAccess.admin()) return envioService.listarEnvios();
-        if (deliveryAccess.repartidorActual())
-            return envioService.listarEnviosRepartidor(deliveryAccess.currentUserId());
+        // Este endpoint siempre representa las solicitudes propias del cliente.
+        // Una cuenta CLIENTE+REPARTIDOR no debe ver sus entregas como si fueran compras.
         return envioService.listarEnviosCliente(deliveryAccess.currentUserId());
     }
 

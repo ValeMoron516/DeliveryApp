@@ -97,10 +97,13 @@ public class EnvioService {
     @Transactional(readOnly = true)
     public List<OfertaEnvioDTO> listarOfertas() {
         return envioRepository.findByEstadoOrderByIdEnvioDesc(EstadoEnvio.BUSCANDO_REPARTIDOR)
-                .stream().filter(e -> e.getRepartidorId() == null)
-                .map(e -> new OfertaEnvioDTO(e.getIdEnvio(),
-                        obtenerTarifa(e.getTarifaCalculadaId()).getTipoVehiculo(),
-                        e.getCostoEnvio())).toList();
+                .stream()
+                .filter(e -> e.getRepartidorId() == null && idValido(e.getTarifaCalculadaId()))
+                .flatMap(e -> tarifaRepository.findById(e.getTarifaCalculadaId())
+                        .stream()
+                        .map(t -> new OfertaEnvioDTO(e.getIdEnvio(),
+                                t.getTipoVehiculo(), e.getCostoEnvio())))
+                .toList();
     }
 
     @Transactional(readOnly = true)
