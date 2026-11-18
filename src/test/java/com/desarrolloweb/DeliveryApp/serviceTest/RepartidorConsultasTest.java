@@ -102,7 +102,7 @@ class RepartidorConsultasTest {
                     @SuppressWarnings("unchecked")
                     java.util.Collection<EstadoEnvio> estados = inv.getArgument(1);
                     assertEquals(Set.of(EstadoEnvio.REPARTIDOR_ASIGNADO,
-                            EstadoEnvio.EN_ORIGEN, EstadoEnvio.EN_CAMINO), Set.copyOf(estados));
+                            EstadoEnvio.EN_ORIGEN, EstadoEnvio.EN_CAMINO, EstadoEnvio.INCIDENCIA), Set.copyOf(estados));
                     return List.of(camino, origen, asignado);
                 });
 

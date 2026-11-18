@@ -7,7 +7,10 @@ import com.desarrolloweb.DeliveryApp.repository.RepartidorRepository;
 import com.desarrolloweb.DeliveryApp.repository.UsuarioRepository;
 import com.desarrolloweb.DeliveryApp.repository.VehiculoRepository;
 import com.desarrolloweb.DeliveryApp.service.RepartidorService;
+import com.desarrolloweb.DeliveryApp.service.RepartidorPresenciaService;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -26,7 +29,13 @@ class DisponibilidadCalculadaRepartidorTest {
     @Mock UsuarioRepository usuarioRepository;
     @Mock EnvioRepository envioRepository;
     @Mock VehiculoRepository vehiculoRepository;
+    @Mock RepartidorPresenciaService presencia;
     @InjectMocks RepartidorService service;
+
+    @BeforeEach
+    void inyectarPresencia() {
+        ReflectionTestUtils.setField(service, "presencia", presencia);
+    }
 
     private Repartidor repartidor(int disponible, Long vehiculoId) {
         Repartidor r = new Repartidor();
@@ -44,13 +53,14 @@ class DisponibilidadCalculadaRepartidorTest {
 
         RepartidorResponseDTO dto = service.obtenerPorId(3L);
 
-        assertEquals(1, dto.getDisponible()); // conserva el dato original
+        assertEquals(0, dto.getDisponible()); // ocupado: el sistema lo informa como no disponible
         assertTrue(dto.isOcupado());
         assertFalse(dto.isPuedeRecibirEnvios());
     }
 
     @Test
     void repartidorLibreConectadoYConVehiculoPuedeRecibirEnvios() {
+        when(presencia.activo(3L)).thenReturn(true);
         when(repartidorRepository.findById(3L)).thenReturn(Optional.of(repartidor(1, 2L)));
         RepartidorResponseDTO dto = service.obtenerPorId(3L);
         assertFalse(dto.isOcupado());
