@@ -5,7 +5,10 @@ import com.desarrolloweb.DeliveryApp.entity.*;
 import com.desarrolloweb.DeliveryApp.exception.EnvioConflictException;
 import com.desarrolloweb.DeliveryApp.repository.*;
 import com.desarrolloweb.DeliveryApp.service.EnvioService;
+import com.desarrolloweb.DeliveryApp.service.RepartidorPresenciaService;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -27,6 +30,13 @@ class CompatibilidadTarifaVehiculoTest {
     @Mock RegistroEtapaDeliveryRepository registroRepository;
     @Mock NotificacionDeliveryRepository notificacionRepository;
     @InjectMocks EnvioService service;
+
+    @Mock RepartidorPresenciaService presencia;
+
+    @BeforeEach
+    void inyectarPresencia() {
+        ReflectionTestUtils.setField(service, "presencia", presencia);
+    }
 
     private Envio envio() {
         Envio e = new Envio();
@@ -50,6 +60,12 @@ class CompatibilidadTarifaVehiculoTest {
     private void preparar(Repartidor r) {
         when(envioRepository.buscarParaModificar(11L)).thenReturn(Optional.of(envio()));
         when(repartidorRepository.buscarParaAsignar(7L)).thenReturn(Optional.of(r));
+        Usuario usuario = new Usuario();
+        Roles rol = new Roles();
+        rol.setNombre("REPARTIDOR");
+        usuario.setRoles(java.util.Set.of(rol));
+        when(usuarioRepository.findById(7L)).thenReturn(Optional.of(usuario));
+        when(presencia.activo(7L)).thenReturn(true);
     }
     private void prepararVehiculo(String tipo) {
         Vehiculo v = new Vehiculo(tipo, "Prueba");

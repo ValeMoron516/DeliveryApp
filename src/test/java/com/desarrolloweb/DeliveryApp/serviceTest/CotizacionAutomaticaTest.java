@@ -6,6 +6,8 @@ import com.desarrolloweb.DeliveryApp.exception.*;
 import com.desarrolloweb.DeliveryApp.repository.*;
 import com.desarrolloweb.DeliveryApp.service.*;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -27,6 +29,13 @@ class CotizacionAutomaticaTest {
     @Mock DireccionRepository direcciones;
     @Mock EnvioService envioService;
     @InjectMocks ServicioCotizacionAutomatica service;
+
+    @Mock RepartidorPresenciaService presencia;
+
+    @BeforeEach
+    void inyectarPresencia() {
+        ReflectionTestUtils.setField(service, "presencia", presencia);
+    }
 
     private CotizarEnvioRequestDTO paquete() {
         CotizarEnvioRequestDTO dto = new CotizarEnvioRequestDTO();
@@ -66,7 +75,13 @@ class CotizacionAutomaticaTest {
         moto.setIdRepartidor(7L);
         moto.setDisponible(1);
         moto.setVehiculoActId(3L);
-        when(repartidores.findByDisponible(1)).thenReturn(List.of(moto));
+        when(repartidores.findAll()).thenReturn(List.of(moto));
+        when(presencia.activo(7L)).thenReturn(true);
+        Usuario usuario = new Usuario();
+        Roles rol = new Roles();
+        rol.setNombre("REPARTIDOR");
+        usuario.setRoles(java.util.Set.of(rol));
+        when(usuarios.findById(7L)).thenReturn(Optional.of(usuario));
         when(vehiculos.findById(3L)).thenReturn(Optional.of(new Vehiculo("MOTO", "moto")));
 
         CotizacionEnvioResponseDTO respuesta = service.cotizar(paquete());

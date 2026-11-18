@@ -16,7 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class ServicioCotizacionAutomatica {
     private static final Set<EstadoEnvio> ACTIVOS = Set.of(
-            EstadoEnvio.REPARTIDOR_ASIGNADO, EstadoEnvio.EN_ORIGEN, EstadoEnvio.EN_CAMINO);
+            EstadoEnvio.REPARTIDOR_ASIGNADO, EstadoEnvio.EN_ORIGEN, EstadoEnvio.EN_CAMINO, EstadoEnvio.INCIDENCIA);
 
     private final TarifaCalculadaRepository tarifas;
     private final RepartidorRepository repartidores;
@@ -25,6 +25,8 @@ public class ServicioCotizacionAutomatica {
     private final UsuarioRepository usuarios;
     private final DireccionRepository direcciones;
     private final EnvioService envioService;
+    @org.springframework.beans.factory.annotation.Autowired
+    private RepartidorPresenciaService presencia;
 
     public ServicioCotizacionAutomatica(TarifaCalculadaRepository tarifas,
             RepartidorRepository repartidores, VehiculoRepository vehiculos,
@@ -42,7 +44,9 @@ public class ServicioCotizacionAutomatica {
     @Transactional(readOnly = true)
     public CotizacionEnvioResponseDTO cotizar(CotizarEnvioRequestDTO solicitud) {
         validarDatosGenerales(solicitud);
-        List<Repartidor> disponibles = repartidores.findByDisponible(1);
+        // El campo persistido "disponible" ya no determina la disponibilidad.
+        // Se evalua presencia activa, rol habilitado y ausencia de entrega en curso.
+        List<Repartidor> disponibles = repartidores.findAll();
         List<Candidato> candidatos = new ArrayList<>();
         for (TarifaCalculada tarifa : tarifas.findAll()) {
             BigDecimal precio;
@@ -189,8 +193,13 @@ public class ServicioCotizacionAutomatica {
     private boolean hayDisponibleCompatible(List<Repartidor> disponibles, TarifaCalculada tarifa) {
         if (disponibles == null) return false;
         for (Repartidor repartidor : disponibles) {
-            if (repartidor.getVehiculoActId() == null
-                    || envios.existsByRepartidorIdAndEstadoIn(repartidor.getIdRepartidor(), ACTIVOS)) {
+            Long idRepartidor = repartidor.getIdRepartidor();
+            if (repartidor.getVehiculoActId() == null || presencia == null
+                    || !presencia.activo(idRepartidor)
+                    || !usuarios.findById(idRepartidor).map(u ->
+                        u.getRoles().stream().anyMatch(r ->
+                            "REPARTIDOR".equalsIgnoreCase(r.getNombre()))).orElse(false)
+                    || envios.existsByRepartidorIdAndEstadoIn(idRepartidor, ACTIVOS)) {
                 continue;
             }
             Optional<Vehiculo> vehiculo = vehiculos.findById(repartidor.getVehiculoActId());
