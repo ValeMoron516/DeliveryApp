@@ -16,11 +16,11 @@ public class DeliveryAuthController {
         this.auth = auth; this.access = access;
     }
     @PostMapping("/registro")
-    public ResponseEntity<DeliveryAuthService.Sesion> registro(@RequestBody DeliveryAuthService.Registro r) {
+    public ResponseEntity<DeliveryAuthService.Sesion> registro(@jakarta.validation.Valid @RequestBody DeliveryAuthService.Registro r) {
         return ResponseEntity.status(HttpStatus.CREATED).body(auth.registrar(r));
     }
     @PostMapping("/login")
-    public DeliveryAuthService.Sesion login(@RequestBody DeliveryAuthService.Credenciales r) { return auth.login(r); }
+    public DeliveryAuthService.Sesion login(@jakarta.validation.Valid @RequestBody DeliveryAuthService.Credenciales r) { return auth.login(r); }
     @GetMapping("/me")
     public DeliveryAuthService.Sesion me() { return auth.renovar(access.currentUserId()); }
     @PostMapping("/admin/usuarios/{id}/habilitar-repartidor")

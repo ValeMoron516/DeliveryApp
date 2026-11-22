@@ -1,6 +1,11 @@
 package com.desarrolloweb.DeliveryApp.service;
 
-import com.desarrolloweb.DeliveryApp.dto.*;
+import com.desarrolloweb.DeliveryApp.dto.envio.CotizacionEnvioResponseDTO;
+import com.desarrolloweb.DeliveryApp.dto.envio.CotizarEnvioRequestDTO;
+import com.desarrolloweb.DeliveryApp.dto.envio.EnvioResponseDTO;
+import com.desarrolloweb.DeliveryApp.dto.solicitudPendiente.SolicitudPendienteDTO;
+
+
 import com.desarrolloweb.DeliveryApp.entity.*;
 import com.desarrolloweb.DeliveryApp.exception.*;
 import com.desarrolloweb.DeliveryApp.repository.*;

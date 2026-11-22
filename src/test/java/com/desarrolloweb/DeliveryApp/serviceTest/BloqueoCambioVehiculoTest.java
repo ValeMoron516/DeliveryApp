@@ -1,6 +1,6 @@
 package com.desarrolloweb.DeliveryApp.serviceTest;
 
-import com.desarrolloweb.DeliveryApp.dto.VehiculoActivoDTO;
+import com.desarrolloweb.DeliveryApp.dto.repartidor.VehiculoActivoRequestDTO;
 import com.desarrolloweb.DeliveryApp.entity.*;
 import com.desarrolloweb.DeliveryApp.exception.EnvioConflictException;
 import com.desarrolloweb.DeliveryApp.repository.*;
@@ -31,7 +31,7 @@ class BloqueoCambioVehiculoTest {
         when(repartidorRepository.buscarParaAsignar(7L)).thenReturn(Optional.of(r));
         when(envioRepository.existsByRepartidorIdAndEstadoIn(eq(7L), anyCollection())).thenReturn(true);
         assertThrows(EnvioConflictException.class,
-                () -> service.actualizarVehiculoActivo(7L, new VehiculoActivoDTO(4L)));
+                () -> service.actualizarVehiculoActivo(7L, new VehiculoActivoRequestDTO(4L)));
         verify(repartidorRepository, never()).save(any());
     }
 
@@ -43,7 +43,7 @@ class BloqueoCambioVehiculoTest {
         when(repartidorRepository.buscarParaAsignar(7L)).thenReturn(Optional.of(r));
         // no hay envios activos; vehiculoRepository.existsById devuelve false
         assertThrows(org.springframework.web.server.ResponseStatusException.class,
-                () -> service.actualizarVehiculoActivo(7L, new VehiculoActivoDTO(404L)));
+                () -> service.actualizarVehiculoActivo(7L, new VehiculoActivoRequestDTO(404L)));
         verify(repartidorRepository, never()).save(any());
     }
 }

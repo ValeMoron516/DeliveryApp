@@ -1,7 +1,7 @@
 package com.desarrolloweb.DeliveryApp.controller;
 
-import com.desarrolloweb.DeliveryApp.dtos.historialGananciaDTO.HistorialGananciaResponseDTO;
-import com.desarrolloweb.DeliveryApp.dtos.paginacionDTO.PaginacionDTO;
+import com.desarrolloweb.DeliveryApp.dto.historialGanancia.HistorialGananciaResponseDTO;
+import com.desarrolloweb.DeliveryApp.dto.paginacion.PaginacionDTO;
 import com.desarrolloweb.DeliveryApp.service.HistorialGananciaService;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;

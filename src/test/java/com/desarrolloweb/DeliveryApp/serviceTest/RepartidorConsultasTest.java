@@ -1,7 +1,7 @@
 package com.desarrolloweb.DeliveryApp.serviceTest;
 
 import com.desarrolloweb.DeliveryApp.controller.RepartidorController;
-import com.desarrolloweb.DeliveryApp.dto.EnvioResponseDTO;
+import com.desarrolloweb.DeliveryApp.dto.envio.EnvioResponseDTO;
 import com.desarrolloweb.DeliveryApp.entity.Envio;
 import com.desarrolloweb.DeliveryApp.entity.EstadoEnvio;
 import com.desarrolloweb.DeliveryApp.repository.EnvioRepository;

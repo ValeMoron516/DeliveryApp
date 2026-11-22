@@ -1,12 +1,24 @@
 
 package com.desarrolloweb.DeliveryApp.controller;
 
+import com.desarrolloweb.DeliveryApp.dto.envio.ActualizarEnvioRequestDTO;
+import com.desarrolloweb.DeliveryApp.dto.envio.ActualizarEstadoRequestDTO;
+import com.desarrolloweb.DeliveryApp.dto.envio.AsignarRepartidorRequestDTO;
+import com.desarrolloweb.DeliveryApp.dto.envio.ConfirmarEntregaRequestDTO;
+import com.desarrolloweb.DeliveryApp.dto.envio.CotizacionEnvioResponseDTO;
+import com.desarrolloweb.DeliveryApp.dto.envio.CotizarEnvioRequestDTO;
+import com.desarrolloweb.DeliveryApp.dto.envio.CrearEnvioRequestDTO;
+import com.desarrolloweb.DeliveryApp.dto.envio.EnvioResponseDTO;
+import com.desarrolloweb.DeliveryApp.dto.envio.OfertaEnvioResponseDTO;
+import com.desarrolloweb.DeliveryApp.dto.envio.SeguimientoEnvioResponseDTO;
+import com.desarrolloweb.DeliveryApp.dto.envio.SolicitarEnvioRequestDTO;
+
+
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
 import java.util.List;
 
-import com.desarrolloweb.DeliveryApp.dto.*;
 import com.desarrolloweb.DeliveryApp.service.EnvioService;
 
 @RestController
@@ -31,28 +43,28 @@ public class EnvioController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("#dto != null and @deliveryAccess.userOrAdmin(#dto.clienteId)")
-    public EnvioResponseDTO crearEnvio(@RequestBody CrearEnvioRequestDTO dto) {
+    public EnvioResponseDTO crearEnvio(@jakarta.validation.Valid @RequestBody CrearEnvioRequestDTO dto) {
         return envioService.crearEnvio(dto);
     }
 
     // Cliente: 1) cotiza sin crear registros, 2) confirma el precio elegido.
     @PostMapping("/cotizar")
     @PreAuthorize("#dto != null and @deliveryAccess.userOrAdmin(#dto.clienteId)")
-    public CotizacionEnvioResponseDTO cotizar(@RequestBody CotizarEnvioRequestDTO dto) {
+    public CotizacionEnvioResponseDTO cotizar(@jakarta.validation.Valid @RequestBody CotizarEnvioRequestDTO dto) {
         return cotizacionAutomatica.cotizar(dto);
     }
 
     @PostMapping("/solicitar")
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("#dto != null and #dto.paquete != null and @deliveryAccess.userOrAdmin(#dto.paquete.clienteId)")
-    public EnvioResponseDTO solicitar(@RequestBody SolicitarEnvioRequestDTO dto) {
+    public EnvioResponseDTO solicitar(@jakarta.validation.Valid @RequestBody SolicitarEnvioRequestDTO dto) {
         return cotizacionAutomatica.solicitar(dto);
     }
 
     // Repartidores: ofertas en espera. Sin datos privados hasta aceptar.
     @GetMapping("/disponibles")
     @PreAuthorize("hasRole('REPARTIDOR')")
-    public List<OfertaEnvioDTO> disponibles() {
+    public List<OfertaEnvioResponseDTO> disponibles() {
         if (!presencia.activo(deliveryAccess.currentUserId())) return List.of();
         return envioService.listarOfertasPara(deliveryAccess.currentUserId());
     }
@@ -68,19 +80,19 @@ public class EnvioController {
 
     @PatchMapping("/{id}/incidencia")
     @PreAuthorize("hasRole('REPARTIDOR')")
-    public EnvioResponseDTO incidencia(@PathVariable Long id, @RequestBody MotivoDesistimiento dto) {
+    public EnvioResponseDTO incidencia(@PathVariable Long id, @jakarta.validation.Valid @RequestBody MotivoDesistimiento dto) {
         return envioService.reportarIncidencia(id, deliveryAccess.currentUserId(), dto.motivo());
     }
 
     @PatchMapping("/{id}/resolver-incidencia")
-    public EnvioResponseDTO resolverIncidencia(@PathVariable Long id, @RequestBody ResolucionIncidencia dto) {
+    public EnvioResponseDTO resolverIncidencia(@PathVariable Long id, @jakarta.validation.Valid @RequestBody ResolucionIncidencia dto) {
         return envioService.resolverIncidencia(id, dto.paqueteDevuelto());
     }
     public record ResolucionIncidencia(boolean paqueteDevuelto) { }
 
     @PatchMapping("/{id}/desistir")
     @PreAuthorize("hasRole('REPARTIDOR')")
-    public EnvioResponseDTO desistir(@PathVariable Long id, @RequestBody MotivoDesistimiento dto) {
+    public EnvioResponseDTO desistir(@PathVariable Long id, @jakarta.validation.Valid @RequestBody MotivoDesistimiento dto) {
         return envioService.desistirRepartidor(id, deliveryAccess.currentUserId(), dto.motivo());
     }
     public record MotivoDesistimiento(String motivo) { }
@@ -110,7 +122,7 @@ public class EnvioController {
     // 3. Modificar datos del envío (PUT /api/v1/envios/{id})
     @PutMapping("/{id}")
     @PreAuthorize("@deliveryAccess.customerShipment(#id)")
-    public EnvioResponseDTO actualizarEnvio(@PathVariable Long id, @RequestBody ActualizarEnvioRequestDTO dto) {
+    public EnvioResponseDTO actualizarEnvio(@PathVariable Long id, @jakarta.validation.Valid @RequestBody ActualizarEnvioRequestDTO dto) {
         return envioService.actualizarEnvio(id, dto);
     }
 
@@ -123,7 +135,7 @@ public class EnvioController {
 
     // 5. Asignar un Repartidor al envío (PATCH /api/v1/envios/{id}/asignar)
     @PatchMapping("/{id}/asignar")
-    public EnvioResponseDTO asignarRepartidor(@PathVariable Long id, @RequestBody AsignarRepartidorRequestDTO dto) {
+    public EnvioResponseDTO asignarRepartidor(@PathVariable Long id, @jakarta.validation.Valid @RequestBody AsignarRepartidorRequestDTO dto) {
         throw new org.springframework.web.server.ResponseStatusException(
             HttpStatus.CONFLICT, "La asignacion requiere aceptacion voluntaria del repartidor");
     }
@@ -131,13 +143,13 @@ public class EnvioController {
     // 6. Actualizar el estado del flujo de envío (PATCH /api/v1/envios/{id}/estado)
     @PatchMapping("/{id}/estado")
     @PreAuthorize("@deliveryAccess.courierShipment(#id)")
-    public EnvioResponseDTO actualizarEstado(@PathVariable Long id, @RequestBody ActualizarEstadoRequestDTO dto) {
+    public EnvioResponseDTO actualizarEstado(@PathVariable Long id, @jakarta.validation.Valid @RequestBody ActualizarEstadoRequestDTO dto) {
         return envioService.actualizarEstado(id, dto);
     }
     // Seguimiento cronologico para el frontend.
     @GetMapping("/{id}/seguimiento")
     @PreAuthorize("@deliveryAccess.readShipment(#id)")
-    public SeguimientoEnvioDTO seguimiento(@PathVariable Long id) {
+    public SeguimientoEnvioResponseDTO seguimiento(@PathVariable Long id) {
         return envioService.obtenerSeguimiento(id);
     }
 
@@ -145,7 +157,7 @@ public class EnvioController {
     @PatchMapping("/{id}/confirmar-entrega")
     @PreAuthorize("@deliveryAccess.courierShipment(#id)")
     public EnvioResponseDTO confirmarEntrega(@PathVariable Long id,
-                                            @RequestBody ConfirmarEntregaRequestDTO dto) {
+                                            @jakarta.validation.Valid @RequestBody ConfirmarEntregaRequestDTO dto) {
         return envioService.confirmarEntrega(id, dto);
     }
 }

@@ -1,6 +1,13 @@
 package com.desarrolloweb.DeliveryApp.controller;
 
-import com.desarrolloweb.DeliveryApp.dto.*;
+import com.desarrolloweb.DeliveryApp.dto.envio.EnvioResponseDTO;
+import com.desarrolloweb.DeliveryApp.dto.repartidor.DisponibilidadRequestDTO;
+import com.desarrolloweb.DeliveryApp.dto.repartidor.RepartidorCreateRequestDTO;
+import com.desarrolloweb.DeliveryApp.dto.repartidor.RepartidorResponseDTO;
+import com.desarrolloweb.DeliveryApp.dto.repartidor.RepartidorUpdateRequestDTO;
+import com.desarrolloweb.DeliveryApp.dto.repartidor.VehiculoActivoRequestDTO;
+
+
 import com.desarrolloweb.DeliveryApp.entity.EstadoEnvio;
 import com.desarrolloweb.DeliveryApp.service.RepartidorService;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -48,7 +55,7 @@ public class RepartidorController {
 
     // 1. POST: Registrar nuevo repartidor
     @PostMapping
-    public ResponseEntity<RepartidorResponseDTO> registrarRepartidor(@RequestBody RepartidorCreateDTO createDTO) {
+    public ResponseEntity<RepartidorResponseDTO> registrarRepartidor(@jakarta.validation.Valid @RequestBody RepartidorCreateRequestDTO createDTO) {
         RepartidorResponseDTO nuevoRepartidor = repartidorService.registrarRepartidor(createDTO);
         return new ResponseEntity<>(nuevoRepartidor, HttpStatus.CREATED);
     }
@@ -72,7 +79,7 @@ public class RepartidorController {
     @PreAuthorize("@deliveryAccess.courierOrAdmin(#idRepartidor)")
     public ResponseEntity<RepartidorResponseDTO> actualizarRepartidor(
             @PathVariable("id") Long idRepartidor,
-            @RequestBody RepartidorUpdateDTO updateDTO) {
+            @jakarta.validation.Valid @RequestBody RepartidorUpdateRequestDTO updateDTO) {
         RepartidorResponseDTO actualizado = repartidorService.actualizarRepartidor(idRepartidor, updateDTO);
         return ResponseEntity.ok(actualizado);
     }
@@ -89,7 +96,7 @@ public class RepartidorController {
     @PreAuthorize("@deliveryAccess.courierOrAdmin(#idRepartidor)")
     public ResponseEntity<RepartidorResponseDTO> actualizarDisponibilidad(
             @PathVariable("id") Long idRepartidor,
-            @RequestBody DisponibilidadDTO disponibilidadDTO) {
+            @jakarta.validation.Valid @RequestBody DisponibilidadRequestDTO disponibilidadDTO) {
         RepartidorResponseDTO actualizado = repartidorService.actualizarDisponibilidad(idRepartidor, disponibilidadDTO);
         return ResponseEntity.ok(actualizado);
     }
@@ -99,7 +106,7 @@ public class RepartidorController {
     @PreAuthorize("@deliveryAccess.courierOrAdmin(#idRepartidor)")
     public ResponseEntity<RepartidorResponseDTO> actualizarVehiculoActivo(
             @PathVariable("id") Long idRepartidor,
-            @RequestBody VehiculoActivoDTO vehiculoActivoDTO) {
+            @jakarta.validation.Valid @RequestBody VehiculoActivoRequestDTO vehiculoActivoDTO) {
         RepartidorResponseDTO actualizado = repartidorService.actualizarVehiculoActivo(idRepartidor, vehiculoActivoDTO);
         return ResponseEntity.ok(actualizado);
     }

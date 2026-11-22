@@ -1,7 +1,7 @@
 package com.desarrolloweb.DeliveryApp.controller;
 
-import com.desarrolloweb.DeliveryApp.dto.CalificacionDeliveryRequestDto;
-import com.desarrolloweb.DeliveryApp.dto.CalificacionDeliveryResponseDto;
+import com.desarrolloweb.DeliveryApp.dto.calificacionDelivery.CalificacionDeliveryRequestDTO;
+import com.desarrolloweb.DeliveryApp.dto.calificacionDelivery.CalificacionDeliveryResponseDTO;
 import com.desarrolloweb.DeliveryApp.service.CalificacionDeliveryService;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.http.HttpStatus;
@@ -24,25 +24,25 @@ public class CalificacionDeliveryController {
 
     @PostMapping("/calificaciones")
     @PreAuthorize("#r != null and @deliveryAccess.customerShipment(#r.envioId)")
-    public ResponseEntity<CalificacionDeliveryResponseDto> crear(@RequestBody CalificacionDeliveryRequestDto r) {
+    public ResponseEntity<CalificacionDeliveryResponseDTO> crear(@jakarta.validation.Valid @RequestBody CalificacionDeliveryRequestDTO r) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.crear(r));
     }
 
     @GetMapping("/calificaciones/{id}")
     @PreAuthorize("@deliveryAccess.ownRating(#id)")
-    public ResponseEntity<CalificacionDeliveryResponseDto> buscarPorId(@PathVariable Integer id) {
+    public ResponseEntity<CalificacionDeliveryResponseDTO> buscarPorId(@PathVariable Integer id) {
         return ResponseEntity.ok(service.buscarPorId(id));
     }
 
     @GetMapping("/envios/{envioId}/calificacion")
     @PreAuthorize("@deliveryAccess.readShipment(#envioId)")
-    public ResponseEntity<CalificacionDeliveryResponseDto> buscarPorEnvio(@PathVariable Long envioId) {
+    public ResponseEntity<CalificacionDeliveryResponseDTO> buscarPorEnvio(@PathVariable Long envioId) {
         return ResponseEntity.ok(service.buscarPorEnvio(envioId));
     }
 
     @GetMapping("/repartidores/{repartidorId}/calificaciones")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<CalificacionDeliveryResponseDto>> listarPorRepartidor(@PathVariable Long repartidorId) {
+    public ResponseEntity<List<CalificacionDeliveryResponseDTO>> listarPorRepartidor(@PathVariable Long repartidorId) {
         return ResponseEntity.ok(service.listarPorRepartidor(repartidorId));
     }
 
@@ -57,8 +57,8 @@ public class CalificacionDeliveryController {
 
     @PutMapping("/calificaciones/{id}")
     @PreAuthorize("@deliveryAccess.ownRating(#id)")
-    public ResponseEntity<CalificacionDeliveryResponseDto> actualizar(@PathVariable Integer id,
-                                                                       @RequestBody CalificacionDeliveryRequestDto r) {
+    public ResponseEntity<CalificacionDeliveryResponseDTO> actualizar(@PathVariable Integer id,
+                                                                       @jakarta.validation.Valid @RequestBody CalificacionDeliveryRequestDTO r) {
         return ResponseEntity.ok(service.actualizar(id, r));
     }
 

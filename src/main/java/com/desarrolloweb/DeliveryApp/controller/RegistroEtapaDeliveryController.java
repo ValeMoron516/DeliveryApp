@@ -19,9 +19,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.desarrolloweb.DeliveryApp.dto.PageResponse;
-import com.desarrolloweb.DeliveryApp.dto.RegistroEtapaDeliveryRequest;
-import com.desarrolloweb.DeliveryApp.dto.RegistroEtapaDeliveryResponse;
+import com.desarrolloweb.DeliveryApp.dto.comun.PageResponseDTO;
+import com.desarrolloweb.DeliveryApp.dto.registroEtapaDelivery.RegistroEtapaDeliveryRequestDTO;
+import com.desarrolloweb.DeliveryApp.dto.registroEtapaDelivery.RegistroEtapaDeliveryResponseDTO;
 import com.desarrolloweb.DeliveryApp.entity.RegistroEtapaDelivery;
 import com.desarrolloweb.DeliveryApp.service.RegistroEtapaDeliveryService;
 
@@ -36,21 +36,21 @@ public class RegistroEtapaDeliveryController {
     }
 
     @GetMapping("/api/v1/registro-etapas-delivery")
-    public PageResponse<RegistroEtapaDeliveryResponse> listar(
+    public PageResponseDTO<RegistroEtapaDeliveryResponseDTO> listar(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "5") int limit) {
         Page<RegistroEtapaDelivery> registros = registroService.listar(page, limit);
-        return PageResponse.from(registros, RegistroEtapaDeliveryResponse::new, page);
+        return PageResponseDTO.from(registros, RegistroEtapaDeliveryResponseDTO::new, page);
     }
 
     @GetMapping("/api/v1/registro-etapas-delivery/{id}")
-    public RegistroEtapaDeliveryResponse obtenerPorId(@PathVariable Long id) {
-        return new RegistroEtapaDeliveryResponse(registroService.obtenerPorId(id));
+    public RegistroEtapaDeliveryResponseDTO obtenerPorId(@PathVariable Long id) {
+        return new RegistroEtapaDeliveryResponseDTO(registroService.obtenerPorId(id));
     }
 
     @PostMapping("/api/v1/registro-etapas-delivery")
-    public ResponseEntity<RegistroEtapaDeliveryResponse> crear(
-            @RequestBody RegistroEtapaDeliveryRequest request) {
+    public ResponseEntity<RegistroEtapaDeliveryResponseDTO> crear(
+            @jakarta.validation.Valid @RequestBody RegistroEtapaDeliveryRequestDTO request) {
         if (request == null || request.getEnvioId() == null || request.getEnvioId() < 1
                 || !StringUtils.hasText(request.getEtapaAlcanzada())
                 || request.getFueValido() == null) {
@@ -65,20 +65,20 @@ public class RegistroEtapaDeliveryController {
                 request.getEtapaAlcanzada().trim(),
                 request.getFueValido()
         );
-        return ResponseEntity.status(HttpStatus.CREATED).body(new RegistroEtapaDeliveryResponse(registro));
+        return ResponseEntity.status(HttpStatus.CREATED).body(new RegistroEtapaDeliveryResponseDTO(registro));
     }
 
     @PatchMapping("/api/v1/registro-etapas-delivery/{id}")
-    public RegistroEtapaDeliveryResponse actualizar(
+    public RegistroEtapaDeliveryResponseDTO actualizar(
             @PathVariable Long id,
-            @RequestBody RegistroEtapaDeliveryRequest request) {
+            @jakarta.validation.Valid @RequestBody RegistroEtapaDeliveryRequestDTO request) {
         if (request == null || request.getFueValido() == null) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
                     "Debe especificarse el campo fueValido"
             );
         }
-        return new RegistroEtapaDeliveryResponse(
+        return new RegistroEtapaDeliveryResponseDTO(
                 registroService.actualizarFueValido(id, request.getFueValido())
         );
     }

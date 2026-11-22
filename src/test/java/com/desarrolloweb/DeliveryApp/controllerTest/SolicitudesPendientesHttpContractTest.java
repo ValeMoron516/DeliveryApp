@@ -2,7 +2,7 @@ package com.desarrolloweb.DeliveryApp.controllerTest;
 
 import com.desarrolloweb.DeliveryApp.controller.PaquetesCompartidosController;
 import com.desarrolloweb.DeliveryApp.controller.SolicitudesPendientesController;
-import com.desarrolloweb.DeliveryApp.dto.SolicitudPendienteDTO;
+import com.desarrolloweb.DeliveryApp.dto.solicitudPendiente.SolicitudPendienteDTO;
 import com.desarrolloweb.DeliveryApp.exception.BadRequestException;
 import com.desarrolloweb.DeliveryApp.exception.ConflictException;
 import com.desarrolloweb.DeliveryApp.exception.GlobalExceptionHandler;

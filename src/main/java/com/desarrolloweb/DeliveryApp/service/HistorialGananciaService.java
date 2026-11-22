@@ -3,10 +3,10 @@ package com.desarrolloweb.DeliveryApp.service;
 import com.desarrolloweb.DeliveryApp.entity.HistorialGanancia;
 import com.desarrolloweb.DeliveryApp.entity.Repartidor;
 import com.desarrolloweb.DeliveryApp.entity.Envio;
-import com.desarrolloweb.DeliveryApp.dtos.historialGananciaDTO.HistorialGananciaRequestDTO;
-import com.desarrolloweb.DeliveryApp.dtos.historialGananciaDTO.HistorialGananciaResponseDTO;
-import com.desarrolloweb.DeliveryApp.dtos.paginacionDTO.MetaDTO;
-import com.desarrolloweb.DeliveryApp.dtos.paginacionDTO.PaginacionDTO;
+import com.desarrolloweb.DeliveryApp.dto.historialGanancia.HistorialGananciaRequestDTO;
+import com.desarrolloweb.DeliveryApp.dto.historialGanancia.HistorialGananciaResponseDTO;
+import com.desarrolloweb.DeliveryApp.dto.paginacion.MetaDTO;
+import com.desarrolloweb.DeliveryApp.dto.paginacion.PaginacionDTO;
 import com.desarrolloweb.DeliveryApp.exception.BadRequestException;
 import com.desarrolloweb.DeliveryApp.exception.ConflictException;
 import com.desarrolloweb.DeliveryApp.exception.NotFoundException;
@@ -99,7 +99,9 @@ public class HistorialGananciaService {
     // Crear nuevo historial de ganancia
     public HistorialGananciaResponseDTO crearHistorialGanancia(HistorialGananciaRequestDTO dto) {
 
-        if (dto.getIdRepartidor() == null || dto.getEnvioId() == null || dto.getMontoLiquidado() == null) {
+        if (dto == null || dto.getIdRepartidor() == null || dto.getIdRepartidor() < 1
+                || dto.getEnvioId() == null || dto.getEnvioId() < 1
+                || dto.getMontoLiquidado() == null || dto.getMontoLiquidado().signum() < 0) {
             throw new BadRequestException("Datos incompletos o inválidos");
         }
 
@@ -137,6 +139,11 @@ public class HistorialGananciaService {
 
     // Actualizar historial de ganancia por ID
     public HistorialGananciaResponseDTO actualizarHistorialGananciaPorId(Long id, HistorialGananciaRequestDTO dto) {
+        if (dto == null || (dto.getMontoLiquidado() != null && dto.getMontoLiquidado().signum() < 0)
+                || (dto.getEnvioId() != null && dto.getEnvioId() < 1)
+                || (dto.getIdRepartidor() != null && dto.getIdRepartidor() < 1)) {
+            throw new BadRequestException("Datos incompletos o invalidos");
+        }
 
         Optional<HistorialGanancia> optH = historialGananciaRepository.findById(id);
         if (!optH.isPresent()) {

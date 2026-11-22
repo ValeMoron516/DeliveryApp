@@ -4,12 +4,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.desarrolloweb.DeliveryApp.repository.DireccionRepository;
 import com.desarrolloweb.DeliveryApp.repository.UsuarioRepository;
-import com.desarrolloweb.DeliveryApp.dto.DireccionRequestDto;
-import com.desarrolloweb.DeliveryApp.dto.DireccionResponseDto;
+import com.desarrolloweb.DeliveryApp.dto.direccion.DireccionRequestDTO;
+import com.desarrolloweb.DeliveryApp.dto.direccion.DireccionResponseDTO;
 import com.desarrolloweb.DeliveryApp.entity.Usuario;
 import com.desarrolloweb.DeliveryApp.entity.Direccion;
 import java.util.ArrayList;
 import java.util.List;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class DireccionService {
@@ -21,7 +23,8 @@ public class DireccionService {
         this.direccionRepository = direccionRepository;
         this.usuarioRepository = usuarioRepository;
     }
-    public DireccionResponseDto crear(Long usuarioId, DireccionRequestDto request){
+    public DireccionResponseDTO crear(Long usuarioId, DireccionRequestDTO request){
+    validarDireccion(request);
     Usuario usuario = usuarioRepository.findById(usuarioId)
         .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND, "Usuario no encontrado"));
 
@@ -35,7 +38,7 @@ direccion.setIndicacionesExtra(request.getIndicacionesExtra());
 
 Direccion guardada = direccionRepository.save(direccion);
 
-return new DireccionResponseDto(
+return new DireccionResponseDTO(
     guardada.getId(),
     guardada.getUsuario().getId(),
     guardada.getCalle(),
@@ -45,14 +48,14 @@ return new DireccionResponseDto(
     guardada.getIndicacionesExtra()
 );
 }
-public List<DireccionResponseDto> listarPorUsuario(Long usuarioId){
+public List<DireccionResponseDTO> listarPorUsuario(Long usuarioId){
     List<Direccion> direcciones = direccionRepository.findByUsuarioId(usuarioId);
 
 
-    List<DireccionResponseDto> resultado = new ArrayList<>();
+    List<DireccionResponseDTO> resultado = new ArrayList<>();
 
     for (Direccion direccion : direcciones) {
-        resultado.add(new DireccionResponseDto(
+        resultado.add(new DireccionResponseDTO(
             direccion.getId(),
             direccion.getUsuario().getId(),
             direccion.getCalle(),
@@ -65,11 +68,11 @@ public List<DireccionResponseDto> listarPorUsuario(Long usuarioId){
 
     return resultado;
 }
-public DireccionResponseDto buscarPorId(Long usuarioId, Long direccionId){
+public DireccionResponseDTO buscarPorId(Long usuarioId, Long direccionId){
     Direccion direccion = direccionRepository.findByIdAndUsuarioId(direccionId, usuarioId)
         .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND, "Direccion no encontrada"));
 
-    return new DireccionResponseDto(
+    return new DireccionResponseDTO(
         direccion.getId(),
         direccion.getUsuario().getId(),
         direccion.getCalle(),
@@ -80,7 +83,8 @@ public DireccionResponseDto buscarPorId(Long usuarioId, Long direccionId){
 
     );
 }
-public DireccionResponseDto actualizar(Long usuarioId, Long direccionId, DireccionRequestDto request){
+public DireccionResponseDTO actualizar(Long usuarioId, Long direccionId, DireccionRequestDTO request){
+    validarDireccion(request);
     Direccion direccion = direccionRepository.findByIdAndUsuarioId(direccionId, usuarioId)
         .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND, "Direccion no encontrada"));
 
@@ -92,7 +96,7 @@ public DireccionResponseDto actualizar(Long usuarioId, Long direccionId, Direcci
 
     Direccion actualizado = direccionRepository.save(direccion);
 
-    return new DireccionResponseDto(
+    return new DireccionResponseDTO(
         actualizado.getId(),
         actualizado.getUsuario().getId(),
         actualizado.getCalle(),
@@ -107,4 +111,14 @@ public void eliminar(Long usuarioId, Long direccionId){
         .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND, "Direccion no encontrada"));
     direccionRepository.delete(direccion);
 }
+
+
+    private void validarDireccion(DireccionRequestDTO request) {
+        if (request == null || vacio(request.getCalle()) || vacio(request.getNumero())
+                || vacio(request.getCiudad()) || vacio(request.getCodigoPostal())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Calle, numero, ciudad y codigo postal son obligatorios");
+        }
+    }
+    private boolean vacio(String valor) { return valor == null || valor.isBlank(); }
 }

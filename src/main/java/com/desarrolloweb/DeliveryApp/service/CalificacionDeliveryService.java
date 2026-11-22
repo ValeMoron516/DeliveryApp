@@ -1,7 +1,7 @@
 package com.desarrolloweb.DeliveryApp.service;
 
-import com.desarrolloweb.DeliveryApp.dto.CalificacionDeliveryRequestDto;
-import com.desarrolloweb.DeliveryApp.dto.CalificacionDeliveryResponseDto;
+import com.desarrolloweb.DeliveryApp.dto.calificacionDelivery.CalificacionDeliveryRequestDTO;
+import com.desarrolloweb.DeliveryApp.dto.calificacionDelivery.CalificacionDeliveryResponseDTO;
 import com.desarrolloweb.DeliveryApp.entity.CalificacionDelivery;
 import com.desarrolloweb.DeliveryApp.repository.CalificacionDeliveryRepository;
 import com.desarrolloweb.DeliveryApp.exception.NotFoundException;
@@ -32,7 +32,7 @@ public class CalificacionDeliveryService {
     }
 
     @Transactional
-    public CalificacionDeliveryResponseDto crear(CalificacionDeliveryRequestDto r) {
+    public CalificacionDeliveryResponseDTO crear(CalificacionDeliveryRequestDTO r) {
         if (r == null || r.getRepartidorId() == null || r.getEnvioId() == null) {
             throw new EnvioBadRequestException("Repartidor y envio son obligatorios");
         }
@@ -56,17 +56,17 @@ public class CalificacionDeliveryService {
         return aDto(repository.save(c));
     }
 
-    public CalificacionDeliveryResponseDto buscarPorId(Integer id) {
+    public CalificacionDeliveryResponseDTO buscarPorId(Integer id) {
         return aDto(repository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Calificación no encontrada con id " + id)));
     }
 
-    public CalificacionDeliveryResponseDto buscarPorEnvio(Long envioId) {
+    public CalificacionDeliveryResponseDTO buscarPorEnvio(Long envioId) {
         return aDto(repository.findByEnvioId(envioId)
                 .orElseThrow(() -> new NotFoundException("El envío " + envioId + " no tiene calificación")));
     }
 
-    public List<CalificacionDeliveryResponseDto> listarPorRepartidor(Long repartidorId) {
+    public List<CalificacionDeliveryResponseDTO> listarPorRepartidor(Long repartidorId) {
         return repository.findByIdRepartidor(repartidorId).stream().map(this::aDto).toList();
     }
 
@@ -80,7 +80,7 @@ public class CalificacionDeliveryService {
     }
 
     @Transactional
-    public CalificacionDeliveryResponseDto actualizar(Integer id, CalificacionDeliveryRequestDto r) {
+    public CalificacionDeliveryResponseDTO actualizar(Integer id, CalificacionDeliveryRequestDTO r) {
         if (r == null) throw new EnvioBadRequestException("Datos de calificacion obligatorios");
         CalificacionDelivery c = repository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Calificación no encontrada con id " + id));
@@ -103,8 +103,8 @@ public class CalificacionDeliveryService {
         }
     }
 
-    private CalificacionDeliveryResponseDto aDto(CalificacionDelivery c) {
-        return new CalificacionDeliveryResponseDto(c.getId(), c.getIdRepartidor(), c.getEnvioId(),
+    private CalificacionDeliveryResponseDTO aDto(CalificacionDelivery c) {
+        return new CalificacionDeliveryResponseDTO(c.getId(), c.getIdRepartidor(), c.getEnvioId(),
                 c.getEstrellas(), c.getComentarioAnonimo());
     }
 }

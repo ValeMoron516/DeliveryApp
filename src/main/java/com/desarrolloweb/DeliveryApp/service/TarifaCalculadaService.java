@@ -7,7 +7,7 @@ import java.math.BigDecimal;
 import com.desarrolloweb.DeliveryApp.repository.TarifaCalculadaRepository;
 import com.desarrolloweb.DeliveryApp.repository.EnvioRepository; // Para validar si hay envíos asociados
 import com.desarrolloweb.DeliveryApp.entity.TarifaCalculada;
-import com.desarrolloweb.DeliveryApp.dto.TarifaCalculadaDTO;
+import com.desarrolloweb.DeliveryApp.dto.tarifaCalculada.TarifaCalculadaDTO;
 import com.desarrolloweb.DeliveryApp.exception.*;
 import org.springframework.transaction.annotation.Transactional;
 

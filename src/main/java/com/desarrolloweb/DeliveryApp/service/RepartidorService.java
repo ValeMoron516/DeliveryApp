@@ -1,20 +1,21 @@
 package com.desarrolloweb.DeliveryApp.service;
 
-import com.desarrolloweb.DeliveryApp.dto.DisponibilidadDTO;
-import com.desarrolloweb.DeliveryApp.dto.EnvioResponseDTO;
-import com.desarrolloweb.DeliveryApp.dto.EnvioResponseMapper;
+import com.desarrolloweb.DeliveryApp.dto.repartidor.DisponibilidadRequestDTO;
+import com.desarrolloweb.DeliveryApp.dto.envio.EnvioResponseDTO;
+import com.desarrolloweb.DeliveryApp.dto.envio.EnvioResponseMapper;
 import com.desarrolloweb.DeliveryApp.entity.Envio;
 import com.desarrolloweb.DeliveryApp.entity.EstadoEnvio;
 import com.desarrolloweb.DeliveryApp.repository.EnvioRepository;
-import com.desarrolloweb.DeliveryApp.dto.RepartidorCreateDTO;
-import com.desarrolloweb.DeliveryApp.dto.RepartidorResponseDTO;
-import com.desarrolloweb.DeliveryApp.dto.RepartidorUpdateDTO;
-import com.desarrolloweb.DeliveryApp.dto.VehiculoActivoDTO;
+import com.desarrolloweb.DeliveryApp.dto.repartidor.RepartidorCreateRequestDTO;
+import com.desarrolloweb.DeliveryApp.dto.repartidor.RepartidorResponseDTO;
+import com.desarrolloweb.DeliveryApp.dto.repartidor.RepartidorUpdateRequestDTO;
+import com.desarrolloweb.DeliveryApp.dto.repartidor.VehiculoActivoRequestDTO;
 import com.desarrolloweb.DeliveryApp.entity.Repartidor;
 import com.desarrolloweb.DeliveryApp.repository.RepartidorRepository;
 import com.desarrolloweb.DeliveryApp.repository.UsuarioRepository;
 import com.desarrolloweb.DeliveryApp.repository.VehiculoRepository;
 import com.desarrolloweb.DeliveryApp.exception.EnvioConflictException;
+import com.desarrolloweb.DeliveryApp.exception.NotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.stereotype.Service;
@@ -71,7 +72,10 @@ public class RepartidorService {
     }
 
     // Registrar nuevo repartidor (Método POST)
-    public RepartidorResponseDTO registrarRepartidor(RepartidorCreateDTO createDTO) {
+    public RepartidorResponseDTO registrarRepartidor(RepartidorCreateRequestDTO createDTO) {
+        if (createDTO == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Datos del repartidor obligatorios");
+        }
         // El ID del repartidor es el mismo ID de un usuario existente.
         if (createDTO.getUsuarioId() == null || createDTO.getUsuarioId() < 1) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Se requiere usuarioId");
@@ -111,14 +115,14 @@ public class RepartidorService {
     // Obtener perfil por ID (Método GET)
     public RepartidorResponseDTO obtenerPorId(Long idRepartidor) {
         Repartidor repartidor = repartidorRepository.findById(idRepartidor)
-                .orElseThrow(() -> new RuntimeException("No se encontró un perfil de repartidor asociado al ID: " + idRepartidor));
+                .orElseThrow(() -> new NotFoundException("No se encontró un perfil de repartidor asociado al ID: " + idRepartidor));
 
         return mapearRepartidor(repartidor);
     }
 
     // Actualizar datos de un repartidor (Método PUT)
     @Transactional
-    public RepartidorResponseDTO actualizarRepartidor(Long idRepartidor, RepartidorUpdateDTO updateDTO) {
+    public RepartidorResponseDTO actualizarRepartidor(Long idRepartidor, RepartidorUpdateRequestDTO updateDTO) {
         if (updateDTO == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Datos obligatorios");
         }
@@ -142,7 +146,7 @@ public class RepartidorService {
     // Eliminar repartidor (Método DELETE)
     public void eliminarRepartidor(Long idRepartidor) {
         if (!repartidorRepository.existsByIdRepartidor(idRepartidor)) {
-            throw new RuntimeException("No se puede eliminar. El repartidor con ID: " + idRepartidor + " no existe.");
+            throw new NotFoundException("No se puede eliminar. El repartidor con ID: " + idRepartidor + " no existe.");
         }
         if (envioRepository.existsByRepartidorId(idRepartidor)) {
             throw new EnvioConflictException("No se puede eliminar un repartidor con envios asociados");
@@ -151,7 +155,7 @@ public class RepartidorService {
     }
     
     // Endpoint antiguo: no se permite activar manualmente la disponibilidad.
-    public RepartidorResponseDTO actualizarDisponibilidad(Long idRepartidor, DisponibilidadDTO dto) {
+    public RepartidorResponseDTO actualizarDisponibilidad(Long idRepartidor, DisponibilidadRequestDTO dto) {
         throw new ResponseStatusException(HttpStatus.CONFLICT,
                 "La disponibilidad es automatica: ingresá al panel de repartidor");
     }
@@ -177,14 +181,14 @@ public class RepartidorService {
     public RepartidorResponseDTO solicitarAlta(Long usuarioId) {
         if (repartidorRepository.existsById(usuarioId))
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Ya existe una solicitud o perfil");
-        RepartidorCreateDTO dto = new RepartidorCreateDTO();
+        RepartidorCreateRequestDTO dto = new RepartidorCreateRequestDTO();
         dto.setUsuarioId(usuarioId);
         return registrarRepartidor(dto);
     }
 
     // Cambiar vehículo activo (Método PATCH)
     @Transactional
-    public RepartidorResponseDTO actualizarVehiculoActivo(Long idRepartidor, VehiculoActivoDTO vehiculoActivoDTO) {
+    public RepartidorResponseDTO actualizarVehiculoActivo(Long idRepartidor, VehiculoActivoRequestDTO vehiculoActivoDTO) {
         if (vehiculoActivoDTO == null || vehiculoActivoDTO.getVehiculoActId() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Se requiere vehiculoActId");
         }
@@ -228,7 +232,7 @@ public class RepartidorService {
     @Transactional(readOnly = true)
     public List<EnvioResponseDTO> obtenerHistorialPedidos(Long idRepartidor, EstadoEnvio estado) {
         if (!repartidorRepository.existsByIdRepartidor(idRepartidor)) {
-            throw new RuntimeException("No se encontró el repartidor con ID: " + idRepartidor);
+            throw new NotFoundException("No se encontró el repartidor con ID: " + idRepartidor);
         }
 
         List<Envio> envios = estado == null
@@ -242,7 +246,7 @@ public class RepartidorService {
     @Transactional(readOnly = true)
     public List<EnvioResponseDTO> obtenerEnviosActivos(Long idRepartidor) {
         if (!repartidorRepository.existsByIdRepartidor(idRepartidor)) {
-            throw new RuntimeException("No se encontró el repartidor con ID: " + idRepartidor);
+            throw new NotFoundException("No se encontró el repartidor con ID: " + idRepartidor);
         }
         return envioRepository.findByRepartidorIdAndEstadoInOrderByIdEnvioDesc(
                 idRepartidor, ESTADOS_ACTIVOS).stream()
@@ -253,7 +257,7 @@ public class RepartidorService {
     // Obtener balance del repartidor (Método GET)
     public BigDecimal obtenerBalance(Long idRepartidor) {
         Repartidor repartidor = repartidorRepository.findById(idRepartidor)
-                .orElseThrow(() -> new RuntimeException("No se encontró el repartidor con ID: " + idRepartidor));
+                .orElseThrow(() -> new NotFoundException("No se encontró el repartidor con ID: " + idRepartidor));
 
         return repartidor.getSaldoAcumulado();
     }

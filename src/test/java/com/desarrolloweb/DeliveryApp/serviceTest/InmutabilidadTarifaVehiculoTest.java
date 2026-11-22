@@ -1,6 +1,6 @@
 package com.desarrolloweb.DeliveryApp.serviceTest;
 
-import com.desarrolloweb.DeliveryApp.dto.TarifaCalculadaDTO;
+import com.desarrolloweb.DeliveryApp.dto.tarifaCalculada.TarifaCalculadaDTO;
 import com.desarrolloweb.DeliveryApp.entity.TarifaCalculada;
 import com.desarrolloweb.DeliveryApp.entity.Vehiculo;
 import com.desarrolloweb.DeliveryApp.exception.EnvioConflictException;

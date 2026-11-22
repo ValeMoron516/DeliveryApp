@@ -3,8 +3,8 @@ package com.desarrolloweb.DeliveryApp.controller;
 import com.desarrolloweb.DeliveryApp.exception.BadRequestException;
 import com.desarrolloweb.DeliveryApp.exception.ConflictException;
 import com.desarrolloweb.DeliveryApp.exception.NotFoundException;
-import com.desarrolloweb.DeliveryApp.dtos.rolDTO.RolRequestDTO;
-import com.desarrolloweb.DeliveryApp.dtos.rolDTO.RolResponseDTO;
+import com.desarrolloweb.DeliveryApp.dto.rol.RolRequestDTO;
+import com.desarrolloweb.DeliveryApp.dto.rol.RolResponseDTO;
 import com.desarrolloweb.DeliveryApp.service.RolService;
 
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -51,7 +51,7 @@ public class RolController {
     // ##################################################
 
     @PostMapping
-    public ResponseEntity<RolResponseDTO> crearRol(@RequestBody RolRequestDTO dto) {
+    public ResponseEntity<RolResponseDTO> crearRol(@jakarta.validation.Valid @RequestBody RolRequestDTO dto) {
         try {
             return ResponseEntity.status(HttpStatus.CREATED).body(rolService.crearRol(dto)); // 201
         } catch (BadRequestException e) {
@@ -64,7 +64,7 @@ public class RolController {
     // ##################################################
 
     @PatchMapping("{id}")
-    public ResponseEntity<RolResponseDTO> actualizarRolPorId(@PathVariable Integer id, @RequestBody RolRequestDTO dto) {
+    public ResponseEntity<RolResponseDTO> actualizarRolPorId(@PathVariable Integer id, @jakarta.validation.Valid @RequestBody RolRequestDTO dto) {
         try {
             return ResponseEntity.status(HttpStatus.OK).body(rolService.actualizarRolPorId(id, dto)); // 200
         } catch (NotFoundException e) {

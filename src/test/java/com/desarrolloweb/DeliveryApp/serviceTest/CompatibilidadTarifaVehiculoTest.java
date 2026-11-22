@@ -1,6 +1,6 @@
 package com.desarrolloweb.DeliveryApp.serviceTest;
 
-import com.desarrolloweb.DeliveryApp.dto.AsignarRepartidorRequestDTO;
+import com.desarrolloweb.DeliveryApp.dto.envio.AsignarRepartidorRequestDTO;
 import com.desarrolloweb.DeliveryApp.entity.*;
 import com.desarrolloweb.DeliveryApp.exception.EnvioConflictException;
 import com.desarrolloweb.DeliveryApp.repository.*;

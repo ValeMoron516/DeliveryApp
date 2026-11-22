@@ -1,5 +1,17 @@
 package com.desarrolloweb.DeliveryApp.service;
 
+import com.desarrolloweb.DeliveryApp.dto.envio.ActualizarEnvioRequestDTO;
+import com.desarrolloweb.DeliveryApp.dto.envio.ActualizarEstadoRequestDTO;
+import com.desarrolloweb.DeliveryApp.dto.envio.AsignarRepartidorRequestDTO;
+import com.desarrolloweb.DeliveryApp.dto.envio.ConfirmarEntregaRequestDTO;
+import com.desarrolloweb.DeliveryApp.dto.envio.CrearEnvioRequestDTO;
+import com.desarrolloweb.DeliveryApp.dto.envio.EnvioResponseDTO;
+import com.desarrolloweb.DeliveryApp.dto.envio.EnvioResponseMapper;
+import com.desarrolloweb.DeliveryApp.dto.envio.OfertaEnvioResponseDTO;
+import com.desarrolloweb.DeliveryApp.dto.envio.SeguimientoEnvioResponseDTO;
+import com.desarrolloweb.DeliveryApp.dto.registroEtapaDelivery.RegistroEtapaDeliveryResponseDTO;
+
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -9,7 +21,6 @@ import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.desarrolloweb.DeliveryApp.dto.*;
 import com.desarrolloweb.DeliveryApp.entity.*;
 import com.desarrolloweb.DeliveryApp.exception.EnvioBadRequestException;
 import com.desarrolloweb.DeliveryApp.exception.EnvioConflictException;
@@ -95,19 +106,19 @@ public class EnvioService {
 
     /** Oferta publica a repartidores autenticados, sin direcciones ni datos personales. */
     @Transactional(readOnly = true)
-    public List<OfertaEnvioDTO> listarOfertas() {
+    public List<OfertaEnvioResponseDTO> listarOfertas() {
         return envioRepository.findByEstadoOrderByIdEnvioDesc(EstadoEnvio.BUSCANDO_REPARTIDOR)
                 .stream()
                 .filter(e -> e.getRepartidorId() == null && idValido(e.getTarifaCalculadaId()))
                 .flatMap(e -> tarifaRepository.findById(e.getTarifaCalculadaId())
                         .stream()
-                        .map(t -> new OfertaEnvioDTO(e.getIdEnvio(),
+                        .map(t -> new OfertaEnvioResponseDTO(e.getIdEnvio(),
                                 t.getTipoVehiculo(), e.getCostoEnvio())))
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<OfertaEnvioDTO> listarOfertasPara(Long repartidorId) {
+    public List<OfertaEnvioResponseDTO> listarOfertasPara(Long repartidorId) {
         if (presencia == null || !presencia.activo(repartidorId)) return List.of();
         Repartidor r = repartidorRepository.findById(repartidorId).orElse(null);
         if (r == null || r.getVehiculoActId() == null ||
@@ -362,13 +373,13 @@ public class EnvioService {
     }
 
     @Transactional(readOnly = true)
-    public SeguimientoEnvioDTO obtenerSeguimiento(Long id) {
+    public SeguimientoEnvioResponseDTO obtenerSeguimiento(Long id) {
         if (!idValido(id)) throw new EnvioBadRequestException("ID de envio invalido");
         Envio envio = envioRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Envio no encontrado: " + id));
-        List<RegistroEtapaDeliveryResponse> etapas = registroRepository
+        List<RegistroEtapaDeliveryResponseDTO> etapas = registroRepository
                 .findAllByEnvioIdOrderByFechaHoraAsc(id).stream()
-                .map(RegistroEtapaDeliveryResponse::new).toList();
+                .map(RegistroEtapaDeliveryResponseDTO::new).toList();
         // No crear historia ficticia para envios anteriores a esta mejora.
         boolean incompleto = etapas.isEmpty()
                 || etapas.stream().noneMatch(e -> EstadoEnvio.BUSCANDO_REPARTIDOR.name().equals(e.getEtapaAlcanzada()));
@@ -384,7 +395,7 @@ public class EnvioService {
             incompleto |= etapas.stream().noneMatch(e -> EstadoEnvio.EN_CAMINO.name().equals(e.getEtapaAlcanzada()));
         }
         incompleto |= etapas.stream().noneMatch(e -> envio.getEstado().name().equals(e.getEtapaAlcanzada()));
-        return new SeguimientoEnvioDTO(
+        return new SeguimientoEnvioResponseDTO(
                 envio.getIdEnvio(), envio.getPedidoExternoId(), envio.getEstado(),
                 envio.getRepartidorId(), envio.getFechaSolicitud(), envio.getFechaEntrega(),
                 envio.getFechaConfirmacion() != null, envio.getFechaConfirmacion(), incompleto, etapas);

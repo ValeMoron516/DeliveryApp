@@ -1,6 +1,6 @@
 package com.desarrolloweb.DeliveryApp.serviceTest;
 
-import com.desarrolloweb.DeliveryApp.dto.CalificacionDeliveryRequestDto;
+import com.desarrolloweb.DeliveryApp.dto.calificacionDelivery.CalificacionDeliveryRequestDTO;
 import com.desarrolloweb.DeliveryApp.entity.*;
 import com.desarrolloweb.DeliveryApp.exception.*;
 import com.desarrolloweb.DeliveryApp.repository.*;
@@ -24,8 +24,8 @@ class CalificacionDeliveryServiceTest {
     @Mock RepartidorRepository repartidorRepository;
     @InjectMocks CalificacionDeliveryService service;
 
-    private CalificacionDeliveryRequestDto solicitud() {
-        return new CalificacionDeliveryRequestDto(8L, 9L, 5, "Bien");
+    private CalificacionDeliveryRequestDTO solicitud() {
+        return new CalificacionDeliveryRequestDTO(8L, 9L, 5, "Bien");
     }
 
     @Test
@@ -51,7 +51,7 @@ class CalificacionDeliveryServiceTest {
 
     @Test
     void rechazaEstrellasFueraDeRango() {
-        CalificacionDeliveryRequestDto r = solicitud();
+        CalificacionDeliveryRequestDTO r = solicitud();
         r.setEstrellas(6);
         assertThrows(EnvioBadRequestException.class, () -> service.crear(r));
         verifyNoInteractions(repository);

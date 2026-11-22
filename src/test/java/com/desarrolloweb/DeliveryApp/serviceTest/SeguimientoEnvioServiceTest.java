@@ -1,6 +1,11 @@
 package com.desarrolloweb.DeliveryApp.serviceTest;
 
-import com.desarrolloweb.DeliveryApp.dto.*;
+import com.desarrolloweb.DeliveryApp.dto.envio.ActualizarEstadoRequestDTO;
+import com.desarrolloweb.DeliveryApp.dto.envio.ConfirmarEntregaRequestDTO;
+import com.desarrolloweb.DeliveryApp.dto.envio.EnvioResponseDTO;
+import com.desarrolloweb.DeliveryApp.dto.envio.SeguimientoEnvioResponseDTO;
+
+
 import com.desarrolloweb.DeliveryApp.entity.*;
 import com.desarrolloweb.DeliveryApp.exception.*;
 import com.desarrolloweb.DeliveryApp.repository.*;
@@ -144,7 +149,7 @@ class SeguimientoEnvioServiceTest {
         when(envioRepository.findById(8L)).thenReturn(Optional.of(e));
         when(registroRepository.findAllByEnvioIdOrderByFechaHoraAsc(8L))
                 .thenReturn(List.of(creado, asignado, origen, camino));
-        SeguimientoEnvioDTO resultado = service.obtenerSeguimiento(8L);
+        SeguimientoEnvioResponseDTO resultado = service.obtenerSeguimiento(8L);
         assertEquals(35L, resultado.pedidoExternoId());
         assertEquals(EstadoEnvio.EN_CAMINO, resultado.estadoActual());
         assertEquals(4, resultado.etapas().size());

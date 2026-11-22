@@ -1,6 +1,6 @@
 package com.desarrolloweb.DeliveryApp.serviceTest;
 
-import com.desarrolloweb.DeliveryApp.dto.RepartidorResponseDTO;
+import com.desarrolloweb.DeliveryApp.dto.repartidor.RepartidorResponseDTO;
 import com.desarrolloweb.DeliveryApp.entity.Repartidor;
 import com.desarrolloweb.DeliveryApp.repository.EnvioRepository;
 import com.desarrolloweb.DeliveryApp.repository.RepartidorRepository;

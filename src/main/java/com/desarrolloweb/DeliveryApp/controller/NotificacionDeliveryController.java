@@ -1,7 +1,7 @@
 package com.desarrolloweb.DeliveryApp.controller;
 
-import com.desarrolloweb.DeliveryApp.dto.NotificacionDeliveryRequestDto;
-import com.desarrolloweb.DeliveryApp.dto.NotificacionDeliveryResponseDto;
+import com.desarrolloweb.DeliveryApp.dto.notificacionDelivery.NotificacionDeliveryRequestDTO;
+import com.desarrolloweb.DeliveryApp.dto.notificacionDelivery.NotificacionDeliveryResponseDTO;
 import com.desarrolloweb.DeliveryApp.service.NotificacionDeliveryService;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.http.HttpStatus;
@@ -23,18 +23,18 @@ public class NotificacionDeliveryController {
     }
 
     @PostMapping("/notificaciones")
-    public ResponseEntity<NotificacionDeliveryResponseDto> crear(@RequestBody NotificacionDeliveryRequestDto r) {
+    public ResponseEntity<NotificacionDeliveryResponseDTO> crear(@jakarta.validation.Valid @RequestBody NotificacionDeliveryRequestDTO r) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.crear(r));
     }
 
     @GetMapping("/notificaciones/{id}")
-    public ResponseEntity<NotificacionDeliveryResponseDto> buscarPorId(@PathVariable Integer id) {
+    public ResponseEntity<NotificacionDeliveryResponseDTO> buscarPorId(@PathVariable Integer id) {
         return ResponseEntity.ok(service.buscarPorId(id));
     }
 
     @GetMapping("/repartidores/{repartidorId}/notificaciones")
     @PreAuthorize("@deliveryAccess.courierOrAdmin(#repartidorId.longValue())")
-    public ResponseEntity<List<NotificacionDeliveryResponseDto>> listarPorRepartidor(@PathVariable Integer repartidorId) {
+    public ResponseEntity<List<NotificacionDeliveryResponseDTO>> listarPorRepartidor(@PathVariable Integer repartidorId) {
         return ResponseEntity.ok(service.listarPorRepartidor(repartidorId));
     }
 
@@ -46,13 +46,13 @@ public class NotificacionDeliveryController {
     }
 
     @GetMapping("/envios/{envioId}/notificaciones")
-    public ResponseEntity<List<NotificacionDeliveryResponseDto>> listarPorEnvio(@PathVariable Integer envioId) {
+    public ResponseEntity<List<NotificacionDeliveryResponseDTO>> listarPorEnvio(@PathVariable Integer envioId) {
         return ResponseEntity.ok(service.listarPorEnvio(envioId));
     }
 
     @PatchMapping("/notificaciones/{id}/leida")
     @PreAuthorize("@deliveryAccess.courierNotification(#id)")
-    public ResponseEntity<NotificacionDeliveryResponseDto> marcarComoLeida(@PathVariable Integer id) {
+    public ResponseEntity<NotificacionDeliveryResponseDTO> marcarComoLeida(@PathVariable Integer id) {
         return ResponseEntity.ok(service.marcarComoLeida(id));
     }
 
