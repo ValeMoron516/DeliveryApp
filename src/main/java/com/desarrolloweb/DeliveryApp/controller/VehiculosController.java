@@ -1,5 +1,6 @@
 package com.desarrolloweb.DeliveryApp.controller;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,13 +15,14 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.desarrolloweb.DeliveryApp.dto.PageResponse;
-import com.desarrolloweb.DeliveryApp.dto.VehiculoRequest;
-import com.desarrolloweb.DeliveryApp.dto.VehiculoResponse;
+import com.desarrolloweb.DeliveryApp.dto.comun.PageResponseDTO;
+import com.desarrolloweb.DeliveryApp.dto.vehiculo.VehiculoRequestDTO;
+import com.desarrolloweb.DeliveryApp.dto.vehiculo.VehiculoResponseDTO;
 import com.desarrolloweb.DeliveryApp.entity.Vehiculo;
 import com.desarrolloweb.DeliveryApp.service.VehiculoService;
 
 @RestController
+@PreAuthorize("hasRole('ADMIN')")
 public class VehiculosController {
 
     private final VehiculoService vehiculoService;
@@ -30,20 +32,20 @@ public class VehiculosController {
     }
 
     @GetMapping("/api/v1/vehiculos")
-    public PageResponse<VehiculoResponse> listar(
+    public PageResponseDTO<VehiculoResponseDTO> listar(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int limit) {
         Page<Vehiculo> vehiculos = vehiculoService.listar(page, limit);
-        return PageResponse.from(vehiculos, VehiculoResponse::new, page);
+        return PageResponseDTO.from(vehiculos, VehiculoResponseDTO::new, page);
     }
 
     @GetMapping("/api/v1/vehiculos/{id}")
-    public VehiculoResponse obtenerPorId(@PathVariable Long id) {
-        return new VehiculoResponse(vehiculoService.obtenerPorId(id));
+    public VehiculoResponseDTO obtenerPorId(@PathVariable Long id) {
+        return new VehiculoResponseDTO(vehiculoService.obtenerPorId(id));
     }
 
     @PostMapping("/api/v1/vehiculos")
-    public ResponseEntity<VehiculoResponse> crear(@RequestBody VehiculoRequest request) {
+    public ResponseEntity<VehiculoResponseDTO> crear(@jakarta.validation.Valid @RequestBody VehiculoRequestDTO request) {
         if (request == null || !StringUtils.hasText(request.getTipo())
                 || !StringUtils.hasText(request.getDescripcion())) {
             throw new ResponseStatusException(
@@ -53,13 +55,13 @@ public class VehiculosController {
         }
 
         Vehiculo vehiculo = vehiculoService.crear(request.getTipo().trim(), request.getDescripcion().trim());
-        return ResponseEntity.status(HttpStatus.CREATED).body(new VehiculoResponse(vehiculo));
+        return ResponseEntity.status(HttpStatus.CREATED).body(new VehiculoResponseDTO(vehiculo));
     }
 
     @PatchMapping("/api/v1/vehiculos/{id}")
-    public VehiculoResponse actualizar(
+    public VehiculoResponseDTO actualizar(
             @PathVariable Long id,
-            @RequestBody VehiculoRequest request) {
+            @jakarta.validation.Valid @RequestBody VehiculoRequestDTO request) {
         if (request == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El cuerpo de la petición es obligatorio");
         }
@@ -73,7 +75,7 @@ public class VehiculosController {
 
         String tipo = request.getTipo() == null ? null : request.getTipo().trim();
         String descripcion = request.getDescripcion() == null ? null : request.getDescripcion().trim();
-        return new VehiculoResponse(vehiculoService.actualizar(id, tipo, descripcion));
+        return new VehiculoResponseDTO(vehiculoService.actualizar(id, tipo, descripcion));
     }
 
     @DeleteMapping("/api/v1/vehiculos/{id}")

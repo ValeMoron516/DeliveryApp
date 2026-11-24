@@ -3,11 +3,12 @@ package com.desarrolloweb.DeliveryApp.controller;
 import com.desarrolloweb.DeliveryApp.exception.BadRequestException;
 import com.desarrolloweb.DeliveryApp.exception.ConflictException;
 import com.desarrolloweb.DeliveryApp.exception.NotFoundException;
-import com.desarrolloweb.DeliveryApp.dtos.historialGananciaDTO.HistorialGananciaRequestDTO;
-import com.desarrolloweb.DeliveryApp.dtos.historialGananciaDTO.HistorialGananciaResponseDTO;
-import com.desarrolloweb.DeliveryApp.dtos.paginacionDTO.PaginacionDTO;
+import com.desarrolloweb.DeliveryApp.dto.historialGanancia.HistorialGananciaRequestDTO;
+import com.desarrolloweb.DeliveryApp.dto.historialGanancia.HistorialGananciaResponseDTO;
+import com.desarrolloweb.DeliveryApp.dto.paginacion.PaginacionDTO;
 import com.desarrolloweb.DeliveryApp.service.HistorialGananciaService;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
+@PreAuthorize("hasRole('ADMIN')")
 @RequestMapping("api/v1/historial-ganancias")
 public class HistorialGananciaController {
 
@@ -55,7 +57,7 @@ public class HistorialGananciaController {
 
     @PostMapping
     public ResponseEntity<HistorialGananciaResponseDTO> crearHistorialGanancia(
-        @RequestBody HistorialGananciaRequestDTO h) {
+        @jakarta.validation.Valid @RequestBody HistorialGananciaRequestDTO h) {
         try {
             return ResponseEntity.status(HttpStatus.CREATED)
             .body(historialGananciaService.crearHistorialGanancia(h)); // 201
@@ -75,7 +77,7 @@ public class HistorialGananciaController {
 
     @PatchMapping("{id}")
     public ResponseEntity<HistorialGananciaResponseDTO> actualizarHistorialGananciaPorId(
-        @PathVariable Long id, @RequestBody HistorialGananciaRequestDTO h) {
+        @PathVariable Long id, @jakarta.validation.Valid @RequestBody HistorialGananciaRequestDTO h) {
         try {
             return ResponseEntity.status(HttpStatus.OK)
             .body(historialGananciaService.actualizarHistorialGananciaPorId(id, h)); // 200

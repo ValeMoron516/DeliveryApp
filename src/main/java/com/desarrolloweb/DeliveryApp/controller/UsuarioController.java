@@ -2,16 +2,18 @@ package com.desarrolloweb.DeliveryApp.controller;
 
 import java.util.List;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.desarrolloweb.DeliveryApp.dto.UsuarioRequestDto;
-import com.desarrolloweb.DeliveryApp.dto.UsuarioResponseDto;
+import com.desarrolloweb.DeliveryApp.dto.usuario.UsuarioRequestDTO;
+import com.desarrolloweb.DeliveryApp.dto.usuario.UsuarioResponseDTO;
 import com.desarrolloweb.DeliveryApp.service.UsuarioService;
 
 @RestController
+@PreAuthorize("hasRole('ADMIN')")
 @RequestMapping("/api/v1/usuarios")
 public class UsuarioController {
 
@@ -23,27 +25,29 @@ public class UsuarioController {
     }
 
     @PostMapping
-    public ResponseEntity<UsuarioResponseDto> crear(@RequestBody UsuarioRequestDto request) {
-        UsuarioResponseDto creado = usuarioService.crear(request);
+    public ResponseEntity<UsuarioResponseDTO> crear(@jakarta.validation.Valid @RequestBody UsuarioRequestDTO request) {
+        UsuarioResponseDTO creado = usuarioService.crear(request);
         return new ResponseEntity<>(creado, HttpStatus.CREATED);
     }
 
     @GetMapping
-    public ResponseEntity<List<UsuarioResponseDto>> listarTodos() {
-        List<UsuarioResponseDto> usuarios = usuarioService.listarTodos();
+    public ResponseEntity<List<UsuarioResponseDTO>> listarTodos() {
+        List<UsuarioResponseDTO> usuarios = usuarioService.listarTodos();
         return new ResponseEntity<>(usuarios, HttpStatus.OK);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<UsuarioResponseDto> buscarPorId(@PathVariable Long id) {
-        UsuarioResponseDto usuario = usuarioService.buscarPorId(id);
+    @PreAuthorize("@deliveryAccess.userOrAdmin(#id)")
+    public ResponseEntity<UsuarioResponseDTO> buscarPorId(@PathVariable Long id) {
+        UsuarioResponseDTO usuario = usuarioService.buscarPorId(id);
         return new ResponseEntity<>(usuario, HttpStatus.OK);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<UsuarioResponseDto> actualizar(@PathVariable Long id,
-            @RequestBody UsuarioRequestDto request) {
-        UsuarioResponseDto actualizado = usuarioService.actualizar(id, request);
+    @PreAuthorize("@deliveryAccess.userOrAdmin(#id)")
+    public ResponseEntity<UsuarioResponseDTO> actualizar(@PathVariable Long id,
+            @jakarta.validation.Valid @RequestBody UsuarioRequestDTO request) {
+        UsuarioResponseDTO actualizado = usuarioService.actualizar(id, request);
         return new ResponseEntity<>(actualizado, HttpStatus.OK);
     }
 

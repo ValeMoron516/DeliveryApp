@@ -41,6 +41,40 @@ public class Envio {
     @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.INTEGER)
     private Long pedidoExternoId;
 
+    // Identificador idempotente para evitar duplicar solicitudes por doble clic o reintento HTTP.
+    @Column(name = "clave_solicitud", length = 64)
+    private String claveSolicitud;
+
+    // Solo solicitudes creadas por el flujo automatico participan en reintentos.
+    // Requiere MIGRACION_ASIGNACION_AUTOMATICA.sql antes de iniciar la version nueva.
+    @Column(name = "asignacion_automatica", nullable = false)
+    private Boolean asignacionAutomatica = false;
+
+    // Constancia declarativa de entrega. Requiere la migracion SQL incluida.
+    @Column(name = "receptor_nombre", length = 120)
+    private String receptorNombre;
+
+    @Column(name = "fecha_confirmacion")
+    private LocalDateTime fechaConfirmacion;
+
+    @Column(name = "observaciones_entrega", length = 255)
+    private String observacionesEntrega;
+
+    // Preparación del envío dentro de envios, sin tabla adicional.
+    @Column(name = "tipo_operacion", length = 10)
+    private String tipoOperacion;
+    @Column(name = "token_compartir_hash", length = 64)
+    private String tokenCompartirHash;
+    @Column(name = "token_compartir_expira")
+    private LocalDateTime tokenCompartirExpira;
+
+    public String getTipoOperacion() { return tipoOperacion; }
+    public void setTipoOperacion(String v) { this.tipoOperacion = v; }
+    public String getTokenCompartirHash() { return tokenCompartirHash; }
+    public void setTokenCompartirHash(String v) { this.tokenCompartirHash = v; }
+    public LocalDateTime getTokenCompartirExpira() { return tokenCompartirExpira; }
+    public void setTokenCompartirExpira(LocalDateTime v) { this.tokenCompartirExpira = v; }
+
     public Envio() {}
 
     // Getters y Setters
@@ -88,6 +122,23 @@ public class Envio {
 
     public String getDescripcionPaquete() { return descripcionPaquete; }
     public void setDescripcionPaquete(String descripcionPaquete) { this.descripcionPaquete = descripcionPaquete; }
+
+    public String getReceptorNombre() { return receptorNombre; }
+    public void setReceptorNombre(String receptorNombre) { this.receptorNombre = receptorNombre; }
+
+    public LocalDateTime getFechaConfirmacion() { return fechaConfirmacion; }
+    public void setFechaConfirmacion(LocalDateTime fechaConfirmacion) { this.fechaConfirmacion = fechaConfirmacion; }
+
+    public String getObservacionesEntrega() { return observacionesEntrega; }
+    public void setObservacionesEntrega(String observacionesEntrega) { this.observacionesEntrega = observacionesEntrega; }
+
+    public String getClaveSolicitud() { return claveSolicitud; }
+    public void setClaveSolicitud(String claveSolicitud) { this.claveSolicitud = claveSolicitud; }
+
+    public Boolean getAsignacionAutomatica() { return asignacionAutomatica; }
+    public void setAsignacionAutomatica(Boolean asignacionAutomatica) {
+        this.asignacionAutomatica = asignacionAutomatica;
+    }
 
     public Long getPedidoExternoId() { return pedidoExternoId; }
     public void setPedidoExternoId(Long pedidoExternoId) { this.pedidoExternoId = pedidoExternoId; }

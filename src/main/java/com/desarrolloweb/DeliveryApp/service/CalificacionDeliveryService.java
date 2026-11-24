@@ -1,10 +1,17 @@
 package com.desarrolloweb.DeliveryApp.service;
 
-import com.desarrolloweb.DeliveryApp.dto.CalificacionDeliveryRequestDto;
-import com.desarrolloweb.DeliveryApp.dto.CalificacionDeliveryResponseDto;
+import com.desarrolloweb.DeliveryApp.dto.calificacionDelivery.CalificacionDeliveryRequestDTO;
+import com.desarrolloweb.DeliveryApp.dto.calificacionDelivery.CalificacionDeliveryResponseDTO;
 import com.desarrolloweb.DeliveryApp.entity.CalificacionDelivery;
 import com.desarrolloweb.DeliveryApp.repository.CalificacionDeliveryRepository;
 import com.desarrolloweb.DeliveryApp.exception.NotFoundException;
+import com.desarrolloweb.DeliveryApp.exception.EnvioBadRequestException;
+import com.desarrolloweb.DeliveryApp.exception.EnvioConflictException;
+import com.desarrolloweb.DeliveryApp.repository.EnvioRepository;
+import com.desarrolloweb.DeliveryApp.repository.RepartidorRepository;
+import com.desarrolloweb.DeliveryApp.entity.Envio;
+import com.desarrolloweb.DeliveryApp.entity.EstadoEnvio;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -13,36 +20,53 @@ import java.util.List;
 public class CalificacionDeliveryService {
 
     private final CalificacionDeliveryRepository repository;
+    private final EnvioRepository envioRepository;
+    private final RepartidorRepository repartidorRepository;
 
-    public CalificacionDeliveryService(CalificacionDeliveryRepository repository) {
+    public CalificacionDeliveryService(CalificacionDeliveryRepository repository,
+                                       EnvioRepository envioRepository,
+                                       RepartidorRepository repartidorRepository) {
         this.repository = repository;
+        this.envioRepository = envioRepository;
+        this.repartidorRepository = repartidorRepository;
     }
 
-    public CalificacionDeliveryResponseDto crear(CalificacionDeliveryRequestDto r) {
-        if (r.getRepartidorId() == null || r.getEnvioId() == null) {
-            throw new RuntimeException("Repartidor y envío son obligatorios");
+    @Transactional
+    public CalificacionDeliveryResponseDTO crear(CalificacionDeliveryRequestDTO r) {
+        if (r == null || r.getRepartidorId() == null || r.getEnvioId() == null) {
+            throw new EnvioBadRequestException("Repartidor y envio son obligatorios");
         }
         validarEstrellas(r.getEstrellas());
-        // Un envío solo se puede calificar una vez
+        Envio envio = envioRepository.findById(r.getEnvioId())
+                .orElseThrow(() -> new NotFoundException("Envio no encontrado"));
+        if (!repartidorRepository.existsById(r.getRepartidorId())) {
+            throw new NotFoundException("Repartidor no encontrado");
+        }
+        if (envio.getEstado() != EstadoEnvio.ENTREGADO) {
+            throw new EnvioConflictException("Solo pueden calificarse envios entregados");
+        }
+        if (!r.getRepartidorId().equals(envio.getRepartidorId())) {
+            throw new EnvioConflictException("El repartidor no corresponde al envio");
+        }
         if (repository.existsByEnvioId(r.getEnvioId())) {
-            throw new RuntimeException("El envío " + r.getEnvioId() + " ya fue calificado");
+            throw new EnvioConflictException("El envio ya fue calificado");
         }
         CalificacionDelivery c = new CalificacionDelivery(null, r.getRepartidorId(), r.getEnvioId(),
                 r.getEstrellas(), r.getComentarioAnonimo());
         return aDto(repository.save(c));
     }
 
-    public CalificacionDeliveryResponseDto buscarPorId(Integer id) {
+    public CalificacionDeliveryResponseDTO buscarPorId(Integer id) {
         return aDto(repository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Calificación no encontrada con id " + id)));
     }
 
-    public CalificacionDeliveryResponseDto buscarPorEnvio(Long envioId) {
+    public CalificacionDeliveryResponseDTO buscarPorEnvio(Long envioId) {
         return aDto(repository.findByEnvioId(envioId)
                 .orElseThrow(() -> new NotFoundException("El envío " + envioId + " no tiene calificación")));
     }
 
-    public List<CalificacionDeliveryResponseDto> listarPorRepartidor(Long repartidorId) {
+    public List<CalificacionDeliveryResponseDTO> listarPorRepartidor(Long repartidorId) {
         return repository.findByIdRepartidor(repartidorId).stream().map(this::aDto).toList();
     }
 
@@ -55,7 +79,9 @@ public class CalificacionDeliveryService {
         return repository.countByIdRepartidor(repartidorId);
     }
 
-    public CalificacionDeliveryResponseDto actualizar(Integer id, CalificacionDeliveryRequestDto r) {
+    @Transactional
+    public CalificacionDeliveryResponseDTO actualizar(Integer id, CalificacionDeliveryRequestDTO r) {
+        if (r == null) throw new EnvioBadRequestException("Datos de calificacion obligatorios");
         CalificacionDelivery c = repository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Calificación no encontrada con id " + id));
         validarEstrellas(r.getEstrellas());
@@ -73,12 +99,12 @@ public class CalificacionDeliveryService {
 
     private void validarEstrellas(Integer e) {
         if (e == null || e < 1 || e > 5) {
-            throw new RuntimeException("Las estrellas deben estar entre 1 y 5");
+            throw new EnvioBadRequestException("Las estrellas deben estar entre 1 y 5");
         }
     }
 
-    private CalificacionDeliveryResponseDto aDto(CalificacionDelivery c) {
-        return new CalificacionDeliveryResponseDto(c.getId(), c.getIdRepartidor(), c.getEnvioId(),
+    private CalificacionDeliveryResponseDTO aDto(CalificacionDelivery c) {
+        return new CalificacionDeliveryResponseDTO(c.getId(), c.getIdRepartidor(), c.getEnvioId(),
                 c.getEstrellas(), c.getComentarioAnonimo());
     }
 }

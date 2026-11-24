@@ -2,8 +2,8 @@
 package com.desarrolloweb.DeliveryApp.service;
 
 import com.desarrolloweb.DeliveryApp.entity.Roles;
-import com.desarrolloweb.DeliveryApp.dtos.rolDTO.RolRequestDTO;
-import com.desarrolloweb.DeliveryApp.dtos.rolDTO.RolResponseDTO;
+import com.desarrolloweb.DeliveryApp.dto.rol.RolRequestDTO;
+import com.desarrolloweb.DeliveryApp.dto.rol.RolResponseDTO;
 import com.desarrolloweb.DeliveryApp.exception.BadRequestException;
 import com.desarrolloweb.DeliveryApp.exception.ConflictException;
 import com.desarrolloweb.DeliveryApp.exception.NotFoundException;
@@ -58,7 +58,7 @@ public class RolService {
     // Crear nuevo rol
     public RolResponseDTO crearRol(RolRequestDTO dto) {
 
-        if (dto.getId() == null ||
+        if (dto == null || dto.getId() == null ||
             dto.getNombre() == null ||
             dto.getNombre().isBlank()) {
 
@@ -105,6 +105,9 @@ public class RolService {
         }
 
         Roles rol = optR.get();
+        if (dto == null || dto.getNombre() == null || dto.getNombre().isBlank()) {
+            throw new BadRequestException("El nombre del rol es obligatorio");
+        }
 
         if (dto.getNombre() != null &&
             !dto.getNombre().isBlank()) {

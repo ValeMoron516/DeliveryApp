@@ -1,14 +1,16 @@
 
 package com.desarrolloweb.DeliveryApp.controller;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
 import java.util.List;
 
-import com.desarrolloweb.DeliveryApp.dto.TarifaCalculadaDTO;
+import com.desarrolloweb.DeliveryApp.dto.tarifaCalculada.TarifaCalculadaDTO;
 import com.desarrolloweb.DeliveryApp.service.TarifaCalculadaService;
 
 @RestController
+@PreAuthorize("hasRole('ADMIN')")
 @RequestMapping("/api/v1/tarifas")
 public class TarifaCalculadaController {
 
@@ -21,7 +23,7 @@ public class TarifaCalculadaController {
     // 1. Crear nueva tarifa (POST /api/v1/tarifas)
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public TarifaCalculadaDTO crearTarifa(@RequestBody TarifaCalculadaDTO dto) {
+    public TarifaCalculadaDTO crearTarifa(@jakarta.validation.Valid @RequestBody TarifaCalculadaDTO dto) {
         return tarifaService.crearTarifa(dto);
     }
 
@@ -39,7 +41,7 @@ public class TarifaCalculadaController {
 
     // 4. Actualizar tarifa existente (PUT /api/v1/tarifas/{id})
     @PutMapping("/{id}")
-    public TarifaCalculadaDTO actualizarTarifa(@PathVariable Long id, @RequestBody TarifaCalculadaDTO dto) {
+    public TarifaCalculadaDTO actualizarTarifa(@PathVariable Long id, @jakarta.validation.Valid @RequestBody TarifaCalculadaDTO dto) {
         return tarifaService.actualizarTarifa(id, dto);
     }
 

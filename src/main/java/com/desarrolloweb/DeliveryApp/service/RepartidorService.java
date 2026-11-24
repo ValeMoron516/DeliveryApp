@@ -1,40 +1,81 @@
 package com.desarrolloweb.DeliveryApp.service;
 
-import com.desarrolloweb.DeliveryApp.dto.DisponibilidadDTO;
-import com.desarrolloweb.DeliveryApp.dto.EnvioResponseDTO;
+import com.desarrolloweb.DeliveryApp.dto.repartidor.DisponibilidadRequestDTO;
+import com.desarrolloweb.DeliveryApp.dto.envio.EnvioResponseDTO;
+import com.desarrolloweb.DeliveryApp.dto.envio.EnvioResponseMapper;
 import com.desarrolloweb.DeliveryApp.entity.Envio;
 import com.desarrolloweb.DeliveryApp.entity.EstadoEnvio;
 import com.desarrolloweb.DeliveryApp.repository.EnvioRepository;
-import com.desarrolloweb.DeliveryApp.dto.RepartidorCreateDTO;
-import com.desarrolloweb.DeliveryApp.dto.RepartidorResponseDTO;
-import com.desarrolloweb.DeliveryApp.dto.RepartidorUpdateDTO;
-import com.desarrolloweb.DeliveryApp.dto.VehiculoActivoDTO;
+import com.desarrolloweb.DeliveryApp.dto.repartidor.RepartidorCreateRequestDTO;
+import com.desarrolloweb.DeliveryApp.dto.repartidor.RepartidorResponseDTO;
+import com.desarrolloweb.DeliveryApp.dto.repartidor.RepartidorUpdateRequestDTO;
+import com.desarrolloweb.DeliveryApp.dto.repartidor.VehiculoActivoRequestDTO;
 import com.desarrolloweb.DeliveryApp.entity.Repartidor;
 import com.desarrolloweb.DeliveryApp.repository.RepartidorRepository;
 import com.desarrolloweb.DeliveryApp.repository.UsuarioRepository;
+import com.desarrolloweb.DeliveryApp.repository.VehiculoRepository;
+import com.desarrolloweb.DeliveryApp.exception.EnvioConflictException;
+import com.desarrolloweb.DeliveryApp.exception.NotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class RepartidorService {
+    private static final Set<EstadoEnvio> ESTADOS_ACTIVOS = Set.of(
+            EstadoEnvio.REPARTIDOR_ASIGNADO,
+            EstadoEnvio.EN_ORIGEN,
+            EstadoEnvio.EN_CAMINO, EstadoEnvio.INCIDENCIA);
+
 
     private final RepartidorRepository repartidorRepository;
     private final UsuarioRepository usuarioRepository;
     private final EnvioRepository envioRepository;
+    private final VehiculoRepository vehiculoRepository;
+    @org.springframework.beans.factory.annotation.Autowired
+    private RepartidorPresenciaService presencia;
 
     public RepartidorService(RepartidorRepository repartidorRepository,
                              UsuarioRepository usuarioRepository,
-                             EnvioRepository envioRepository) {
+                             EnvioRepository envioRepository,
+                             VehiculoRepository vehiculoRepository) {
         this.repartidorRepository = repartidorRepository;
         this.usuarioRepository = usuarioRepository;
         this.envioRepository = envioRepository;
+        this.vehiculoRepository = vehiculoRepository;
+    }
+
+    // "disponible" es la voluntad de recibir trabajos (0/1), no el estado de ocupacion.
+    // La ocupacion se calcula desde los envios activos, sin modificar PostgreSQL.
+    private RepartidorResponseDTO mapearRepartidor(Repartidor repartidor) {
+        boolean ocupado = envioRepository.existsByRepartidorIdAndEstadoIn(
+                repartidor.getIdRepartidor(), ESTADOS_ACTIVOS);
+        boolean puedeRecibirEnvios = presencia != null && presencia.activo(repartidor.getIdRepartidor())
+                && !ocupado && repartidor.getVehiculoActId() != null;
+
+        RepartidorResponseDTO respuesta = new RepartidorResponseDTO(
+                repartidor.getIdRepartidor(),
+                repartidor.getFotoUrl(),
+                puedeRecibirEnvios ? 1 : 0,
+                repartidor.getSaldoAcumulado(),
+                repartidor.getCalificacionPromedio(),
+                repartidor.getTasaRechazoInterna(),
+                repartidor.getVehiculoActId());
+        respuesta.setOcupado(ocupado);
+        respuesta.setPuedeRecibirEnvios(puedeRecibirEnvios);
+        return respuesta;
     }
 
     // Registrar nuevo repartidor (Método POST)
-    public RepartidorResponseDTO registrarRepartidor(RepartidorCreateDTO createDTO) {
+    public RepartidorResponseDTO registrarRepartidor(RepartidorCreateRequestDTO createDTO) {
+        if (createDTO == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Datos del repartidor obligatorios");
+        }
         // El ID del repartidor es el mismo ID de un usuario existente.
         if (createDTO.getUsuarioId() == null || createDTO.getUsuarioId() < 1) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Se requiere usuarioId");
@@ -45,6 +86,7 @@ public class RepartidorService {
         if (repartidorRepository.existsById(createDTO.getUsuarioId())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Ese usuario ya es repartidor");
         }
+        validarVehiculoExistente(createDTO.getVehiculoActId());
         Repartidor repartidor = new Repartidor();
         repartidor.setIdRepartidor(createDTO.getUsuarioId());
         repartidor.setFotoUrl(createDTO.getFotoUrl());
@@ -60,154 +102,162 @@ public class RepartidorService {
         Repartidor repartidorGuardado = repartidorRepository.save(repartidor);
 
         // Devolver la respuesta mapeada
-        return new RepartidorResponseDTO(
-                repartidorGuardado.getIdRepartidor(),
-                repartidorGuardado.getFotoUrl(),
-                repartidorGuardado.getDisponible(),
-                repartidorGuardado.getSaldoAcumulado(),
-                repartidorGuardado.getCalificacionPromedio(),
-                repartidorGuardado.getTasaRechazoInterna(),
-                repartidorGuardado.getVehiculoActId()
-        );
+        return mapearRepartidor(repartidorGuardado);
     }
 
     // Listar todos los repartidores (Método GET)
     public List<RepartidorResponseDTO> listarRepartidores() {
         return repartidorRepository.findAll().stream()
-                .map(repartidor -> new RepartidorResponseDTO(
-                        repartidor.getIdRepartidor(),
-                        repartidor.getFotoUrl(),
-                        repartidor.getDisponible(),
-                        repartidor.getSaldoAcumulado(),
-                        repartidor.getCalificacionPromedio(),
-                        repartidor.getTasaRechazoInterna(),
-                        repartidor.getVehiculoActId()
-                ))
+                .map(repartidor -> mapearRepartidor(repartidor))
                 .toList();
     }
 
     // Obtener perfil por ID (Método GET)
     public RepartidorResponseDTO obtenerPorId(Long idRepartidor) {
         Repartidor repartidor = repartidorRepository.findById(idRepartidor)
-                .orElseThrow(() -> new RuntimeException("No se encontró un perfil de repartidor asociado al ID: " + idRepartidor));
+                .orElseThrow(() -> new NotFoundException("No se encontró un perfil de repartidor asociado al ID: " + idRepartidor));
 
-        return new RepartidorResponseDTO(
-                repartidor.getIdRepartidor(),
-                repartidor.getFotoUrl(),
-                repartidor.getDisponible(),
-                repartidor.getSaldoAcumulado(),
-                repartidor.getCalificacionPromedio(),
-                repartidor.getTasaRechazoInterna(),
-                repartidor.getVehiculoActId()
-        );
+        return mapearRepartidor(repartidor);
     }
 
     // Actualizar datos de un repartidor (Método PUT)
-    public RepartidorResponseDTO actualizarRepartidor(Long idRepartidor, RepartidorUpdateDTO updateDTO) {
-        Repartidor repartidor = repartidorRepository.findById(idRepartidor)
-                .orElseThrow(() -> new RuntimeException("No se puede actualizar. El repartidor con ID: " + idRepartidor + " no existe."));
-
+    @Transactional
+    public RepartidorResponseDTO actualizarRepartidor(Long idRepartidor, RepartidorUpdateRequestDTO updateDTO) {
+        if (updateDTO == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Datos obligatorios");
+        }
+        Repartidor repartidor = repartidorRepository.buscarParaAsignar(idRepartidor)
+                .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Repartidor no encontrado"));
+        // La disponibilidad la calcula el sistema; PUT no puede activarla.
+        if (!Objects.equals(repartidor.getVehiculoActId(), updateDTO.getVehiculoActId())) {
+            impedirCambioVehiculoEnCurso(idRepartidor);
+            validarVehiculoExistente(updateDTO.getVehiculoActId());
+        }
         repartidor.setFotoUrl(updateDTO.getFotoUrl());
-        repartidor.setDisponible(updateDTO.getDisponible());
+
         repartidor.setVehiculoActId(updateDTO.getVehiculoActId());
 
         Repartidor repartidorActualizado = repartidorRepository.save(repartidor);
 
-        return new RepartidorResponseDTO(
-                repartidorActualizado.getIdRepartidor(),
-                repartidorActualizado.getFotoUrl(),
-                repartidorActualizado.getDisponible(),
-                repartidorActualizado.getSaldoAcumulado(),
-                repartidorActualizado.getCalificacionPromedio(),
-                repartidorActualizado.getTasaRechazoInterna(),
-                repartidorActualizado.getVehiculoActId()
-        );
+        return mapearRepartidor(repartidorActualizado);
     }
 
     // Eliminar repartidor (Método DELETE)
     public void eliminarRepartidor(Long idRepartidor) {
         if (!repartidorRepository.existsByIdRepartidor(idRepartidor)) {
-            throw new RuntimeException("No se puede eliminar. El repartidor con ID: " + idRepartidor + " no existe.");
+            throw new NotFoundException("No se puede eliminar. El repartidor con ID: " + idRepartidor + " no existe.");
+        }
+        if (envioRepository.existsByRepartidorId(idRepartidor)) {
+            throw new EnvioConflictException("No se puede eliminar un repartidor con envios asociados");
         }
         repartidorRepository.deleteById(idRepartidor);
     }
     
-    // Cambiar disponibilidad (Método PATCH)
-    public RepartidorResponseDTO actualizarDisponibilidad(Long idRepartidor, DisponibilidadDTO disponibilidadDTO) {
-        Repartidor repartidor = repartidorRepository.findById(idRepartidor)
-                .orElseThrow(() -> new RuntimeException("No se encontró el repartidor con ID: " + idRepartidor));
+    // Endpoint antiguo: no se permite activar manualmente la disponibilidad.
+    public RepartidorResponseDTO actualizarDisponibilidad(Long idRepartidor, DisponibilidadRequestDTO dto) {
+        throw new ResponseStatusException(HttpStatus.CONFLICT,
+                "La disponibilidad es automatica: ingresá al panel de repartidor");
+    }
 
-        repartidor.setDisponible(disponibilidadDTO.getDisponible());
-        Repartidor actualizado = repartidorRepository.save(repartidor);
+    @Transactional(readOnly = true)
+    public RepartidorResponseDTO registrarPresencia(Long idRepartidor) {
+        Repartidor perfil = repartidorRepository.findById(idRepartidor)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Perfil no encontrado"));
+        boolean habilitado = usuarioRepository.findById(idRepartidor)
+                .map(u -> u.getRoles().stream().anyMatch(r -> "REPARTIDOR".equalsIgnoreCase(r.getNombre())))
+                .orElse(false);
+        if (!habilitado) throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Pendiente de aprobacion");
+        if (presencia == null) throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE);
+        presencia.registrar(idRepartidor);
+        return mapearRepartidor(perfil);
+    }
+    public void salirDelModoRepartidor(Long idRepartidor) {
+        if (presencia != null) presencia.salir(idRepartidor);
+    }
 
-        return new RepartidorResponseDTO(
-                actualizado.getIdRepartidor(),
-                actualizado.getFotoUrl(),
-                actualizado.getDisponible(),
-                actualizado.getSaldoAcumulado(),
-                actualizado.getCalificacionPromedio(),
-                actualizado.getTasaRechazoInterna(),
-                actualizado.getVehiculoActId()
-        );
+    /** CLIENTE solicita un perfil pendiente de aprobacion; no se otorga ROLE_REPARTIDOR. */
+    @Transactional
+    public RepartidorResponseDTO solicitarAlta(Long usuarioId) {
+        if (repartidorRepository.existsById(usuarioId))
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Ya existe una solicitud o perfil");
+        RepartidorCreateRequestDTO dto = new RepartidorCreateRequestDTO();
+        dto.setUsuarioId(usuarioId);
+        return registrarRepartidor(dto);
     }
 
     // Cambiar vehículo activo (Método PATCH)
-    public RepartidorResponseDTO actualizarVehiculoActivo(Long idRepartidor, VehiculoActivoDTO vehiculoActivoDTO) {
-        Repartidor repartidor = repartidorRepository.findById(idRepartidor)
-                .orElseThrow(() -> new RuntimeException("No se encontró el repartidor con ID: " + idRepartidor));
-
+    @Transactional
+    public RepartidorResponseDTO actualizarVehiculoActivo(Long idRepartidor, VehiculoActivoRequestDTO vehiculoActivoDTO) {
+        if (vehiculoActivoDTO == null || vehiculoActivoDTO.getVehiculoActId() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Se requiere vehiculoActId");
+        }
+        Repartidor repartidor = repartidorRepository.buscarParaAsignar(idRepartidor)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Repartidor no encontrado"));
+        if (!Objects.equals(repartidor.getVehiculoActId(), vehiculoActivoDTO.getVehiculoActId())) {
+            impedirCambioVehiculoEnCurso(idRepartidor);
+            validarVehiculoExistente(vehiculoActivoDTO.getVehiculoActId());
+        }
         repartidor.setVehiculoActId(vehiculoActivoDTO.getVehiculoActId());
         Repartidor actualizado = repartidorRepository.save(repartidor);
 
-        return new RepartidorResponseDTO(
-                actualizado.getIdRepartidor(),
-                actualizado.getFotoUrl(),
-                actualizado.getDisponible(),
-                actualizado.getSaldoAcumulado(),
-                actualizado.getCalificacionPromedio(),
-                actualizado.getTasaRechazoInterna(),
-                actualizado.getVehiculoActId()
-        );
+        return mapearRepartidor(actualizado);
     }
 
-    // Historial real de envíos asignados al repartidor (incluye entregados y en curso).
+    private void impedirCambioVehiculoEnCurso(Long idRepartidor) {
+        if (envioRepository.existsByRepartidorIdAndEstadoIn(idRepartidor,
+                Set.of(EstadoEnvio.REPARTIDOR_ASIGNADO, EstadoEnvio.EN_ORIGEN, EstadoEnvio.EN_CAMINO, EstadoEnvio.INCIDENCIA))) {
+            throw new EnvioConflictException("No se puede cambiar el vehiculo durante un envio activo");
+        }
+    }
+
+    private void validarVehiculoExistente(Long vehiculoId) {
+        if (vehiculoId != null && (vehiculoId < 1 || !vehiculoRepository.existsById(vehiculoId))) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Vehiculo activo no encontrado");
+        }
+    }
+
+    private void validarDisponibilidad(Long idRepartidor, int disponible) {
+        if (disponible != 0 && disponible != 1) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Disponible debe ser 0 o 1");
+        }
+        if (disponible == 1 && envioRepository.existsByRepartidorIdAndEstadoIn(idRepartidor,
+                List.of(EstadoEnvio.REPARTIDOR_ASIGNADO, EstadoEnvio.EN_ORIGEN, EstadoEnvio.EN_CAMINO, EstadoEnvio.INCIDENCIA))) {
+            throw new EnvioConflictException("No puede marcarse disponible con un envio activo");
+        }
+    }
+
+    // Historial completo (sin cambiar el endpoint que ya usa Postman).
     // El estado es opcional: /historial-pedidos?estado=ENTREGADO
+    @Transactional(readOnly = true)
     public List<EnvioResponseDTO> obtenerHistorialPedidos(Long idRepartidor, EstadoEnvio estado) {
         if (!repartidorRepository.existsByIdRepartidor(idRepartidor)) {
-            throw new RuntimeException("No se encontró el repartidor con ID: " + idRepartidor);
+            throw new NotFoundException("No se encontró el repartidor con ID: " + idRepartidor);
         }
 
         List<Envio> envios = estado == null
                 ? envioRepository.findByRepartidorIdOrderByIdEnvioDesc(idRepartidor)
                 : envioRepository.findByRepartidorIdAndEstadoOrderByIdEnvioDesc(idRepartidor, estado);
 
-        return envios.stream().map(this::mapearEnvio).toList();
+        return envios.stream().map(envio -> EnvioResponseMapper.mapear(envio, null)).toList();
     }
 
-    private EnvioResponseDTO mapearEnvio(Envio envio) {
-        EnvioResponseDTO dto = new EnvioResponseDTO();
-        dto.setIdEnvio(envio.getIdEnvio());
-        dto.setClienteId(envio.getClienteId());
-        dto.setRepartidorId(envio.getRepartidorId());
-        dto.setDireccionOrigenId(envio.getDireccionOrigenId());
-        dto.setDireccionDestinoId(envio.getDireccionDestinoId());
-        dto.setTarifaCalculadaId(envio.getTarifaCalculadaId());
-        dto.setFechaSolicitud(envio.getFechaSolicitud());
-        dto.setFechaEntrega(envio.getFechaEntrega());
-        dto.setEstado(envio.getEstado());
-        dto.setPesoPaqueteKg(envio.getPesoPaqueteKg());
-        dto.setLargoPaqueteCm(envio.getLargoPaqueteCm());
-        dto.setAnchoPaqueteCm(envio.getAnchoPaqueteCm());
-        dto.setAltoPaqueteCm(envio.getAltoPaqueteCm());
-        dto.setCostoEnvio(envio.getCostoEnvio());
-        dto.setDescripcionPaquete(envio.getDescripcionPaquete());
-        return dto;
+    // Solo entregas activas. No incluye entregados ni cancelados.
+    @Transactional(readOnly = true)
+    public List<EnvioResponseDTO> obtenerEnviosActivos(Long idRepartidor) {
+        if (!repartidorRepository.existsByIdRepartidor(idRepartidor)) {
+            throw new NotFoundException("No se encontró el repartidor con ID: " + idRepartidor);
+        }
+        return envioRepository.findByRepartidorIdAndEstadoInOrderByIdEnvioDesc(
+                idRepartidor, ESTADOS_ACTIVOS).stream()
+                .map(envio -> EnvioResponseMapper.mapear(envio, null))
+                .toList();
     }
 
     // Obtener balance del repartidor (Método GET)
     public BigDecimal obtenerBalance(Long idRepartidor) {
         Repartidor repartidor = repartidorRepository.findById(idRepartidor)
-                .orElseThrow(() -> new RuntimeException("No se encontró el repartidor con ID: " + idRepartidor));
+                .orElseThrow(() -> new NotFoundException("No se encontró el repartidor con ID: " + idRepartidor));
 
         return repartidor.getSaldoAcumulado();
     }

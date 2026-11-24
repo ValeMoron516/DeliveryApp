@@ -1,10 +1,12 @@
 package com.desarrolloweb.DeliveryApp.service;
 
-import com.desarrolloweb.DeliveryApp.dto.NotificacionDeliveryRequestDto;
-import com.desarrolloweb.DeliveryApp.dto.NotificacionDeliveryResponseDto;
+import com.desarrolloweb.DeliveryApp.dto.notificacionDelivery.NotificacionDeliveryRequestDTO;
+import com.desarrolloweb.DeliveryApp.dto.notificacionDelivery.NotificacionDeliveryResponseDTO;
 import com.desarrolloweb.DeliveryApp.entity.NotificacionDelivery;
 import com.desarrolloweb.DeliveryApp.repository.NotificacionDeliveryRepository;
 import org.springframework.stereotype.Service;
+import com.desarrolloweb.DeliveryApp.exception.BadRequestException;
+import com.desarrolloweb.DeliveryApp.exception.NotFoundException;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -13,7 +15,7 @@ import java.util.Set;
 @Service
 public class NotificacionDeliveryService {
 
-    private static final Set<String> CANALES = Set.of("PUSH", "SMS", "EMAIL");
+    private static final Set<String> CANALES = Set.of("IN_APP", "PUSH", "SMS", "EMAIL");
 
     private final NotificacionDeliveryRepository repository;
 
@@ -21,18 +23,21 @@ public class NotificacionDeliveryService {
         this.repository = repository;
     }
 
-    public NotificacionDeliveryResponseDto crear(NotificacionDeliveryRequestDto r) {
+    public NotificacionDeliveryResponseDTO crear(NotificacionDeliveryRequestDTO r) {
+        if (r == null) {
+            throw new BadRequestException("Datos de notificacion obligatorios");
+        }
         if (r.getEnvioId() == null) {
-            throw new RuntimeException("El envío es obligatorio");
+            throw new BadRequestException("El envío es obligatorio");
         }
         if (r.getTipoCanal() == null || !CANALES.contains(r.getTipoCanal().toUpperCase())) {
-            throw new RuntimeException("El canal debe ser PUSH, SMS o EMAIL");
+            throw new BadRequestException("El canal debe ser IN_APP, PUSH, SMS o EMAIL");
         }
         if (r.getTitulo() == null || r.getTitulo().isBlank()) {
-            throw new RuntimeException("El título es obligatorio");
+            throw new BadRequestException("El título es obligatorio");
         }
         if (r.getContenidoMensaje() == null || r.getContenidoMensaje().isBlank()) {
-            throw new RuntimeException("El mensaje es obligatorio");
+            throw new BadRequestException("El mensaje es obligatorio");
         }
         // Estado inicial SENT y fecha asignada por el servidor
         NotificacionDelivery n = new NotificacionDelivery(null, r.getRepartidorId(), r.getEnvioId(),
@@ -41,16 +46,16 @@ public class NotificacionDeliveryService {
         return aDto(repository.save(n));
     }
 
-    public NotificacionDeliveryResponseDto buscarPorId(Integer id) {
+    public NotificacionDeliveryResponseDTO buscarPorId(Integer id) {
         return aDto(buscar(id));
     }
 
-    public List<NotificacionDeliveryResponseDto> listarPorRepartidor(Integer repartidorId) {
+    public List<NotificacionDeliveryResponseDTO> listarPorRepartidor(Integer repartidorId) {
         return repository.findByIdRepartidorOrderByFechaNotificacionDesc(repartidorId)
                 .stream().map(this::aDto).toList();
     }
 
-    public List<NotificacionDeliveryResponseDto> listarPorEnvio(Integer envioId) {
+    public List<NotificacionDeliveryResponseDTO> listarPorEnvio(Integer envioId) {
         return repository.findByEnvioIdOrderByFechaNotificacionDesc(envioId)
                 .stream().map(this::aDto).toList();
     }
@@ -59,7 +64,7 @@ public class NotificacionDeliveryService {
         return repository.countByIdRepartidorAndEstadoEnvio(repartidorId, "SENT");
     }
 
-    public NotificacionDeliveryResponseDto marcarComoLeida(Integer id) {
+    public NotificacionDeliveryResponseDTO marcarComoLeida(Integer id) {
         NotificacionDelivery n = buscar(id);
         n.setEstadoEnvio("READ");
         return aDto(repository.save(n));
@@ -67,18 +72,19 @@ public class NotificacionDeliveryService {
 
     public void eliminar(Integer id) {
         if (!repository.existsById(id)) {
-            throw new RuntimeException("Notificación no encontrada con id " + id);
+            throw new NotFoundException("Notificación no encontrada con id " + id);
         }
         repository.deleteById(id);
     }
 
     private NotificacionDelivery buscar(Integer id) {
+        if (id == null || id < 1) throw new BadRequestException("Id de notificacion invalido");
         return repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Notificación no encontrada con id " + id));
+                .orElseThrow(() -> new NotFoundException("Notificación no encontrada con id " + id));
     }
 
-    private NotificacionDeliveryResponseDto aDto(NotificacionDelivery n) {
-        return new NotificacionDeliveryResponseDto(n.getId(), n.getIdRepartidor(), n.getEnvioId(),
+    private NotificacionDeliveryResponseDTO aDto(NotificacionDelivery n) {
+        return new NotificacionDeliveryResponseDTO(n.getId(), n.getIdRepartidor(), n.getEnvioId(),
                 n.getTipoCanal(), n.getTitulo(), n.getContenidoMensaje(), n.getEstadoEnvio(),
                 n.getFechaNotificacion());
     }

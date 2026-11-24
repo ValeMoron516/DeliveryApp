@@ -5,8 +5,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.time.LocalDateTime;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
-import com.desarrolloweb.DeliveryApp.dto.ErrorResponseDTO;
+import com.desarrolloweb.DeliveryApp.dto.comun.ErrorResponseDTO;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -20,6 +25,64 @@ public class GlobalExceptionHandler {
             ex.getMessage()
         );
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<ErrorResponseDTO> handleResponseStatus(ResponseStatusException ex) {
+        HttpStatusCode status = ex.getStatusCode();
+        return ResponseEntity.status(status).body(new ErrorResponseDTO(
+                LocalDateTime.now(), status.value(), "Error de solicitud", ex.getReason()));
+    }
+
+    // Errores de datos de entrada: nunca deben convertirse en 500.
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponseDTO> handleDtoInvalido(MethodArgumentNotValidException ex) {
+        String detalle = ex.getBindingResult().getFieldErrors().stream()
+                .findFirst()
+                .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                .orElse("Datos de la solicitud invalidos");
+        return ResponseEntity.badRequest().body(new ErrorResponseDTO(
+                LocalDateTime.now(), 400, "Bad Request", detalle));
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponseDTO> handleJsonInvalido(HttpMessageNotReadableException ex) {
+        return ResponseEntity.badRequest().body(new ErrorResponseDTO(
+                LocalDateTime.now(), 400, "Bad Request", "JSON invalido o tipo de dato incorrecto"));
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponseDTO> handleParametroInvalido(MethodArgumentTypeMismatchException ex) {
+        return ResponseEntity.badRequest().body(new ErrorResponseDTO(
+                LocalDateTime.now(), 400, "Bad Request", "Parametro invalido: " + ex.getName()));
+    }
+
+    @ExceptionHandler({BadRequestException.class, IllegalArgumentException.class})
+    public ResponseEntity<ErrorResponseDTO> handleValidation(RuntimeException ex) {
+        return ResponseEntity.badRequest().body(new ErrorResponseDTO(
+                LocalDateTime.now(), 400, "Bad Request", ex.getMessage()));
+    }
+
+    @ExceptionHandler(ConflictException.class)
+    public ResponseEntity<ErrorResponseDTO> handleDomainConflict(ConflictException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponseDTO(
+                LocalDateTime.now(), 409, "Conflict", ex.getMessage()));
+    }
+
+    @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponseDTO> handleDatosDuplicados(
+            org.springframework.dao.DataIntegrityViolationException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponseDTO(
+                LocalDateTime.now(), 409, "Conflict",
+                "Solicitud duplicada o datos incompatibles. Comprueba si el envio ya se creo."));
+    }
+
+    // Spring Security method-level authorization exceptions must not be flattened into HTTP 500.
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public ResponseEntity<ErrorResponseDTO> handleAccessDenied(
+            org.springframework.security.access.AccessDeniedException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErrorResponseDTO(
+                LocalDateTime.now(), HttpStatus.FORBIDDEN.value(), "Forbidden", "Acceso denegado"));
     }
 
     @ExceptionHandler(RuntimeException.class)
@@ -38,7 +101,7 @@ public class GlobalExceptionHandler {
             LocalDateTime.now(),
             HttpStatus.INTERNAL_SERVER_ERROR.value(),
             "Internal Server Error",
-            ex.getMessage()
+            "Error interno del servidor"
         );
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
     }

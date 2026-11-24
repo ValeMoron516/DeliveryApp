@@ -5,4 +5,5 @@ import com.desarrolloweb.DeliveryApp.entity.Usuario;
 
 public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     boolean existsByEmail(String email);
+    java.util.Optional<Usuario> findByEmailIgnoreCase(String email);
 }
