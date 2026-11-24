@@ -2,6 +2,7 @@
 package com.desarrolloweb.DeliveryApp.entity;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import jakarta.persistence.*;
 
 @Entity
@@ -30,6 +31,27 @@ public class Repartidor {
     @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.INTEGER)
     @Column(name = "vehiculo_act_id")
     private Long vehiculoActId;
+
+    @Column(name = "estado_solicitud", nullable = false, length = 12)
+    private String estadoSolicitud = "PENDIENTE";
+
+    @Column(name = "motivo_rechazo", length = 500)
+    private String motivoRechazo;
+
+    @Column(name = "fecha_solicitud", nullable = false)
+    private LocalDateTime fechaSolicitud = LocalDateTime.now();
+
+    @Column(name = "fecha_resolucion")
+    private LocalDateTime fechaResolucion;
+
+    public String getEstadoSolicitud() { return estadoSolicitud; }
+    public void setEstadoSolicitud(String estado) { this.estadoSolicitud = estado; }
+    public String getMotivoRechazo() { return motivoRechazo; }
+    public void setMotivoRechazo(String motivo) { this.motivoRechazo = motivo; }
+    public LocalDateTime getFechaSolicitud() { return fechaSolicitud; }
+    public void setFechaSolicitud(LocalDateTime fecha) { this.fechaSolicitud = fecha; }
+    public LocalDateTime getFechaResolucion() { return fechaResolucion; }
+    public void setFechaResolucion(LocalDateTime fecha) { this.fechaResolucion = fecha; }
 
     public Repartidor() {
     }

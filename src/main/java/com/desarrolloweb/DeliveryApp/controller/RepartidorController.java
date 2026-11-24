@@ -31,13 +31,17 @@ public class RepartidorController {
         this.repartidorService = repartidorService;
     }
 
-    // Solicitud publica para un cliente autenticado; requiere aprobacion ADMIN.
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.desarrolloweb.DeliveryApp.service.SolicitudRepartidorService solicitudesRepartidor;
+
+    // Ruta antigua: usa el mismo registro de solicitudes con estado persistente.
     @PostMapping("/solicitar-alta")
     @PreAuthorize("hasRole('CLIENTE')")
     public ResponseEntity<RepartidorResponseDTO> solicitarAlta(
             @org.springframework.security.core.annotation.AuthenticationPrincipal org.springframework.security.oauth2.jwt.Jwt jwt) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(
-                repartidorService.solicitarAlta(Long.valueOf(jwt.getSubject())));
+        Long usuarioId = Long.valueOf(jwt.getSubject());
+        solicitudesRepartidor.solicitar(usuarioId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(repartidorService.obtenerPorId(usuarioId));
     }
 
     @PostMapping("/{id}/presencia")

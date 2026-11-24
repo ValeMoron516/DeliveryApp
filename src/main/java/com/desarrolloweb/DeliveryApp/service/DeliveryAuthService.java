@@ -65,16 +65,12 @@ public class DeliveryAuthService {
         Usuario u = usuarios.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
         return emitir(u);
     }
+    @org.springframework.beans.factory.annotation.Autowired
+    private SolicitudRepartidorService solicitudesRepartidor;
     @Transactional
     public void habilitarRepartidor(Long id) {
-        Usuario u = usuarios.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        if (perfiles == null || !perfiles.existsById(id))
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "El usuario debe solicitar el alta primero");
-        Roles repartidor = roles.findByNombreIgnoreCase("REPARTIDOR")
-                .orElseThrow(() -> new IllegalStateException("Falta rol REPARTIDOR"));
-        u.getRoles().add(repartidor);
-        usuarios.save(u);
-        // El perfil del repartidor se crea con el endpoint administrativo /repartidores.
+        // Compatibilidad con endpoint anterior: misma aprobación definitiva.
+        solicitudesRepartidor.aprobar(id);
     }
     private Sesion emitir(Usuario u) {
         Set<String> nombres = u.getRoles().stream()
