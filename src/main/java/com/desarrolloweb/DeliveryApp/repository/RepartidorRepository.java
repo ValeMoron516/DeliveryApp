@@ -11,6 +11,8 @@ import org.springframework.data.repository.query.Param;
 
 public interface RepartidorRepository extends JpaRepository<Repartidor, Long> {
     List<Repartidor> findByDisponible(Integer disponible);
+    List<Repartidor> findByEstadoSolicitudOrderByFechaSolicitudAsc(String estado);
+    List<Repartidor> findAllByOrderByFechaSolicitudDesc();
     boolean existsByIdRepartidor(Long idRepartidor);
     boolean existsByVehiculoActId(Long vehiculoActId);
 
