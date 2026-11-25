@@ -459,7 +459,23 @@ Antes de iniciar la aplicación, revisá:
 
 ### 7. Ejecutar el backend
 
-Si el proyecto utiliza Maven, desde la carpeta raíz ejecutá:
+Primero debemos crear la llave que usará la aplicación para generar los tokens y guardarla en `src/main/resources/application-secret.properties`:
+
+```PowerShell
+$rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+
+$bytes = New-Object 'System.Byte[]' 32
+
+$rng.GetBytes($bytes)
+
+$env:NEGOCIOAPP_JWT_SECRET = [Convert]::ToBase64String($bytes)
+
+$rng.Dispose()
+
+$file = "src/main/resources/application-secret.properties"; if (!(Test-Path $file) -or !(Select-String -Path $file -Pattern "^jwt\.secret\s*=" -Quiet)) { Add-Content -Path $file -Value "`njwt.secret=$env:NEGOCIOAPP_JWT_SECRET" }
+```
+
+Ejecutar la aplicación:
 
 ```bash
 mvn spring-boot:run
