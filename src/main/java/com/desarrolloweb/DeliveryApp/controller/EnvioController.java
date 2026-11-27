@@ -27,14 +27,17 @@ import com.desarrolloweb.DeliveryApp.service.EnvioService;
 public class EnvioController {
 
     private final EnvioService envioService;
+    private final com.desarrolloweb.DeliveryApp.repository.DireccionRepository direccionRepository;
     @org.springframework.beans.factory.annotation.Autowired
     private com.desarrolloweb.DeliveryApp.service.RepartidorPresenciaService presencia;
     private final com.desarrolloweb.DeliveryApp.service.DeliveryAccess deliveryAccess;
     private final com.desarrolloweb.DeliveryApp.service.ServicioCotizacionAutomatica cotizacionAutomatica;
 
     public EnvioController(EnvioService envioService, com.desarrolloweb.DeliveryApp.service.DeliveryAccess deliveryAccess,
-            com.desarrolloweb.DeliveryApp.service.ServicioCotizacionAutomatica cotizacionAutomatica) {
+            com.desarrolloweb.DeliveryApp.service.ServicioCotizacionAutomatica cotizacionAutomatica,
+            com.desarrolloweb.DeliveryApp.repository.DireccionRepository direccionRepository) {
         this.envioService = envioService;
+        this.direccionRepository = direccionRepository;
         this.deliveryAccess = deliveryAccess;
         this.cotizacionAutomatica = cotizacionAutomatica;
     }
@@ -118,6 +121,29 @@ public class EnvioController {
     public EnvioResponseDTO obtenerEnvioPorId(@PathVariable Long id) {
         return envioService.obtenerEnvioPorId(id);
     }
+
+    // Solo el repartidor asignado (o un administrador) puede leer las direcciones.
+    // Nunca exponer estos datos en la lista pública de ofertas.
+    @GetMapping("/{id}/direcciones-repartidor")
+    @PreAuthorize("@deliveryAccess.courierShipment(#id)")
+    public DireccionesRepartidorResponse direccionesRepartidor(@PathVariable Long id) {
+        EnvioResponseDTO envio = envioService.obtenerEnvioPorId(id);
+        return new DireccionesRepartidorResponse(
+            direccionParaEnvio(envio.getDireccionOrigenId()),
+            direccionParaEnvio(envio.getDireccionDestinoId()));
+    }
+
+    private DireccionOperativa direccionParaEnvio(Long direccionId) {
+        if (direccionId == null) return null;
+        var direccion = direccionRepository.findById(direccionId)
+            .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(HttpStatus.NOT_FOUND, "Direccion no encontrada"));
+        return new DireccionOperativa(direccion.getCalle(), direccion.getNumero(), direccion.getCiudad(),
+            direccion.getCodigoPostal(), direccion.getIndicacionesExtra());
+    }
+
+    public record DireccionOperativa(String calle, String numero, String ciudad,
+                                    String codigoPostal, String indicacionesExtra) { }
+    public record DireccionesRepartidorResponse(DireccionOperativa origen, DireccionOperativa destino) { }
 
     // 3. Modificar datos del envío (PUT /api/v1/envios/{id})
     @PutMapping("/{id}")
