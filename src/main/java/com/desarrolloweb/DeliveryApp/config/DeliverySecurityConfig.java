@@ -30,7 +30,7 @@ import com.nimbusds.jose.jwk.source.ImmutableSecret;
 @EnableMethodSecurity
 public class DeliverySecurityConfig {
     @Bean
-    SecretKey deliveryJwtKey(@Value("${delivery.jwt.secret-base64:${DELIVERYAPP_JWT_SECRET:}}") String base64) {
+    SecretKey deliveryJwtKey(@Value("${jwt.secret:}") String base64) {
         if (base64 == null || base64.isBlank()) {
             throw new IllegalStateException("Configurá DELIVERYAPP_JWT_SECRET (48 bytes aleatorios en Base64)");
         }
