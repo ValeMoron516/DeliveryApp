@@ -33,3 +33,16 @@ build/
 .vscode/
 
 *.log
+
+### Secretos: NUNCA se suben a GitHub ###
+# Contraseña de la base de datos y clave del token
+application-secret.properties
+application-secret*.properties
+# Certificados y llaves
+*.pem
+*.p12
+*.jks
+*.key
+# Variables de entorno
+.env
+.env.*

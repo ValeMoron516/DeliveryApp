@@ -444,9 +444,18 @@ spring.datasource.password=${DB_PASSWORD}
 spring.datasource.driver-class-name=org.postgresql.Driver
 ```
 
-Definí las variables de entorno `DB_USERNAME` y `DB_PASSWORD` con las credenciales de tu entorno.
+Los valores reales (dirección, usuario y contraseña de la base) **se los pedís al equipo por privado**. Ese archivo (y el certificado `ca.pem`, si la base lo exige) quedan **solo en tu computadora**: `.gitignore` los excluye y **nunca** deben subirse a GitHub ni pegarse en chats públicos.
 
-### 6. Verificar la configuración
+### 6. Aplicar las migraciones de la base de datos
+
+Si la base ya existía antes de una versión nueva del código, pueden faltar columnas y el backend no arrancará (por ejemplo: `Schema validation: missing column [asignacion_automatica] in table [envios]`). En la raíz del repositorio están los scripts que las agregan:
+
+- `MIGRACION_ASIGNACION_AUTOMATICA.sql`
+- `MIGRACION_CONFIRMACION_ENTREGA.sql`
+
+Solo agregan columnas, no borran ni modifican datos. **En una base compartida se aplican únicamente con acuerdo del equipo y después de un respaldo.**
+
+### 7. Verificar la configuración
 
 Antes de iniciar la aplicación, revisá:
 
@@ -457,31 +466,21 @@ Antes de iniciar la aplicación, revisá:
 - La configuración de autenticación y autorización.
 - Las credenciales y variables de entorno de las integraciones externas, si están habilitadas.
 
-### 7. Ejecutar el backend
+### 8. Ejecutar el backend
 
-Primero debemos crear la llave que usará la aplicación para generar los tokens y guardarla en `src/main/resources/application-secret.properties`:
+La aplicación necesita una llave secreta para firmar los tokens de sesión (JWT). Se pasa con la variable de entorno `JWT_SECRET` (Spring la lee como la propiedad `jwt.secret`), con **48 bytes aleatorios en Base64**. La llave **no se guarda en el repositorio**: se genera en cada arranque. Los tokens duran 45 minutos.
 
-```PowerShell
-$rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
-
-$bytes = New-Object 'System.Byte[]' 32
-
-$rng.GetBytes($bytes)
-
-$env:NEGOCIOAPP_JWT_SECRET = [Convert]::ToBase64String($bytes)
-
-$rng.Dispose()
-
-$file = "src/main/resources/application-secret.properties"; if (!(Test-Path $file) -or !(Select-String -Path $file -Pattern "^jwt\.secret\s*=" -Quiet)) { Add-Content -Path $file -Value "`njwt.secret=$env:NEGOCIOAPP_JWT_SECRET" }
-```
-
-Ejecutar la aplicación:
+En Git Bash (Windows), parado en la carpeta del proyecto:
 
 ```bash
-mvn spring-boot:run
+export JAVA_HOME="/c/Program Files/Java/jdk-25.0.4"
+export JWT_SECRET="$(openssl rand -base64 48)"
+./mvnw spring-boot:run
 ```
 
-### 8. Comprobar que la aplicación funciona
+Ajustá la ruta de `JAVA_HOME` a tu instalación (el proyecto usa Java 25). Si preferís definir la llave de forma permanente, podés agregar la línea `jwt.secret=...` en `src/main/resources/application-secret.properties` (archivo ignorado por Git).
+
+### 9. Comprobar que la aplicación funciona
 
 Revisá los registros de inicio para confirmar que Spring Boot arrancó correctamente y que pudo conectarse a PostgreSQL.
 

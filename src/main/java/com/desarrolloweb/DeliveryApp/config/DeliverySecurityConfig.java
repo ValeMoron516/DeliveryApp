@@ -32,7 +32,7 @@ public class DeliverySecurityConfig {
     @Bean
     SecretKey deliveryJwtKey(@Value("${jwt.secret:}") String base64) {
         if (base64 == null || base64.isBlank()) {
-            throw new IllegalStateException("Configurá DELIVERYAPP_JWT_SECRET (48 bytes aleatorios en Base64)");
+            throw new IllegalStateException("Configurá JWT_SECRET (48 bytes aleatorios en Base64) o la propiedad jwt.secret");
         }
         byte[] raw;
         try { raw = Base64.getDecoder().decode(base64.trim()); }
